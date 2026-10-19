@@ -1,0 +1,4 @@
+# core: mixing, recorded SFX, tempo lock
+numpy>=1.26
+soundfile>=0.12
+librosa>=0.10

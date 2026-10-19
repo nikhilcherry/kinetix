@@ -1,0 +1,4 @@
+# MusicGen beds (kinetix music gen). Install the torch build that matches your GPU first if you have one:
+#   https://pytorch.org/get-started/locally/
+torch>=2.3
+transformers>=4.44

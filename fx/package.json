@@ -1,0 +1,17 @@
+{
+  "name": "kinetix-fx",
+  "private": true,
+  "scripts": { "render": "remotion render" },
+  "dependencies": {
+    "remotion": "4.0.536",
+    "@remotion/cli": "4.0.536",
+    "@remotion/light-leaks": "4.0.536",
+    "@remotion/transitions": "4.0.536",
+    "@remotion/captions": "4.0.536",
+    "@remotion/noise": "4.0.536",
+    "@remotion/layout-utils": "4.0.536",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": { "typescript": "5.9.3", "@types/react": "19.1.8" }
+}

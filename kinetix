@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+"""kinetix: beat-synced reels from code. Music, captions, effects, quality gate and render in one CLI.
+
+  kinetix doctor                          check node, ffmpeg, python deps, GPU, built pieces
+  kinetix new <dir> [--landscape]         start a reel from the template
+  kinetix sync <dir>                      copy the runtime, bridge and vendor bundles into a reel
+  kinetix music gen "<prompt>" --bpm 150 --seconds 40 -o bed.wav     MusicGen bed locked to the beat grid
+  kinetix mix <dir>                       run <dir>/music.py (hits.py is importable) -> assets/mix.wav
+  kinetix captions <dir>                  <dir>/captions-lines.json -> assets/captions.js (word-timed)
+  kinetix fx leak --hue 200 [--seed 3] [--landscape] -o leak.mov
+  kinetix fx stinger --colors "#c8ff3d,#5a45c9" [--landscape] -o stinger.mov
+  kinetix check <dir> [--samples N]       HyperFrames gate: overlap, overflow, invisible text, contrast
+  kinetix snap <dir> 1.5,4,9              PNG frames + a contact sheet
+  kinetix render <dir> -o out.mp4 [--overlay file@t[:opacity[:mode]]]... [--poster T]
+  kinetix port reel.html <dir>/index.html --dur 30   turn a standalone seek(t) page into a HyperFrames composition
+"""
+import argparse
+import json
+import math
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+HF = ROOT / "node_modules" / ".bin" / "hyperframes"
+REMOTION = ROOT / "fx" / "node_modules" / ".bin" / "remotion"
+RUNTIME_FILES = [ROOT / "runtime" / "kinetix.js", ROOT / "runtime" / "kinetix.css", ROOT / "bridge" / "hf-bridge.js"]
+VENDOR = ROOT / "vendor"
+
+
+def py():
+    """The Python that has numpy/librosa/torch: $KINETIX_PYTHON, then ./.venv, then this one."""
+    env = os.environ.get("KINETIX_PYTHON")
+    if env:
+        return env
+    venv = ROOT / ".venv" / "bin" / "python"
+    return str(venv) if venv.exists() else sys.executable
+
+
+def run(cmd, **kw):
+    print("$ " + " ".join(str(c) for c in cmd), file=sys.stderr)
+    r = subprocess.run([str(c) for c in cmd], **kw)
+    if r.returncode:
+        sys.exit(r.returncode)
+    return r
+
+
+def need(path, hint):
+    if not Path(path).exists():
+        sys.exit(f"missing {path}\n  -> {hint}")
+
+
+def duration_of(d):
+    m = re.search(r'data-composition-id="main"[^>]*data-duration="([\d.]+)"', (Path(d) / "index.html").read_text())
+    return float(m.group(1)) if m else 30.0
+
+
+# ------------------------------------------------------------------ commands
+def cmd_doctor(a):
+    ok = True
+
+    def line(good, name, detail=""):
+        nonlocal ok
+        ok &= bool(good)
+        print(f"  {'✓' if good else '✗'} {name}{('  ' + detail) if detail else ''}")
+
+    node = shutil.which("node")
+    nv = subprocess.run(["node", "-v"], capture_output=True, text=True).stdout.strip() if node else ""
+    line(node and int(nv.lstrip("v").split(".")[0]) >= 22, "node >= 22", nv or "not found")
+    line(shutil.which("ffmpeg"), "ffmpeg")
+    line(HF.exists(), "hyperframes CLI", "" if HF.exists() else "run ./setup.sh")
+    line(REMOTION.exists(), "remotion (fx/)", "" if REMOTION.exists() else "run ./setup.sh")
+    line(all((VENDOR / f).exists() for f in ("remotion-captions.js", "remotion-noise.js", "remotion-layout-utils.js")),
+         "vendor bundles", "" if VENDOR.exists() else "run ./setup.sh")
+    p = py()
+    for mod, why in [("numpy", "mixing"), ("soundfile", "SFX + beds"), ("librosa", "tempo lock"),
+                     ("torch", "MusicGen (optional)"), ("transformers", "MusicGen (optional)"), ("faster_whisper", "captions (optional)")]:
+        r = subprocess.run([p, "-c", f"import {mod}"], capture_output=True)
+        line(r.returncode == 0, f"python: {mod}", why)
+    r = subprocess.run([p, "-c", "import torch;print(torch.cuda.is_available())"], capture_output=True, text=True)
+    print(f"  · GPU for MusicGen: {r.stdout.strip() or 'unknown'} (CPU works, just slower)")
+    print("all good" if ok else "some pieces missing (optional ones are fine to skip)")
+
+
+def cmd_sync(a):
+    d = Path(a.dir)
+    need(VENDOR, "run ./setup.sh to build the vendor bundles")
+    for f in RUNTIME_FILES:
+        shutil.copy(f, d / f.name)
+    shutil.copytree(VENDOR, d / "vendor", dirs_exist_ok=True)
+    print(f"synced runtime + bridge + vendor into {d}")
+
+
+def cmd_new(a):
+    d = Path(a.dir)
+    if d.exists() and any(d.iterdir()):
+        sys.exit(f"{d} exists and is not empty")
+    shutil.copytree(ROOT / "template", d, dirs_exist_ok=True)
+    if a.landscape:
+        html = (d / "index.html").read_text()
+        html = html.replace('data-width="1080" data-height="1920"', 'data-width="1920" data-height="1080"')
+        html = html.replace("width: 1080, height: 1920", "width: 1920, height: 1080")
+        html = html.replace("html, body { width: 1080px; height: 1920px; }", "html, body { width: 1920px; height: 1080px; }")
+        (d / "index.html").write_text(html)
+    cmd_sync(a)
+    print(f"\nnew reel in {d}. next:\n  kinetix mix {d}        # soundtrack\n  kinetix snap {d} 1,5,10   # look at it\n"
+          f"  kinetix check {d}\n  kinetix render {d} -o {d}/out.mp4 --poster 12")
+
+
+def cmd_music(a):
+    run([py(), ROOT / "music" / "hypebeat.py", *a.rest])
+
+
+def cmd_mix(a):
+    d = Path(a.dir)
+    env = dict(os.environ, PYTHONPATH=str(ROOT / "music") + os.pathsep + os.environ.get("PYTHONPATH", ""))
+    run([py(), "music.py", *a.rest], cwd=d, env=env)
+
+
+def cmd_captions(a):
+    d = Path(a.dir)
+    lines = d / (a.lines or "captions-lines.json")
+    need(lines, 'write captions-lines.json: [{"clip": "assets/line1.wav", "at": 1.6, "text": "...", "y": 1500}]')
+    run([py(), ROOT / "captions" / "captions.py", lines.name, "assets/captions.js"], cwd=d)
+
+
+def cmd_fx(a):
+    need(REMOTION, "run ./setup.sh")
+    comp = {"leak": "Leak", "stinger": "Stinger"}[a.kind] + ("H" if a.landscape else "")
+    if a.kind == "leak":
+        props = {"seed": a.seed, "hueShift": a.hue}
+    else:
+        c1, c2 = (a.colors or "#c8ff3d,#5a45c9").split(",")
+        props = {"a": c1, "b": c2}
+        if a.landscape:
+            props.update(w=1920, h=1080)
+    out = Path(a.out).resolve()
+    run([REMOTION, "render", "src/index.ts", comp, out, f"--props={json.dumps(props)}", "--codec=prores", "--prores-profile=4444",
+         "--pixel-format=yuva444p10le", "--image-format=png", f"--gl={a.gl}", "--log=error"], cwd=ROOT / "fx")
+    print(out)
+
+
+def cmd_check(a):
+    need(HF, "run ./setup.sh")
+    samples = a.samples or max(30, math.ceil(duration_of(a.dir) * 2))
+    run([HF, "check", "--samples", str(samples)], cwd=a.dir)
+
+
+def cmd_snap(a):
+    need(HF, "run ./setup.sh")
+    run([HF, "snapshot", "--at", a.times], cwd=a.dir)
+
+
+def cmd_render(a):
+    need(HF, "run ./setup.sh")
+    d = Path(a.dir).resolve()
+    out = Path(a.out).resolve()
+    raw = out.with_name(out.stem + ".raw.mp4")
+    run([HF, "render", "--quality", a.quality, "--output", raw], cwd=d)
+    cur = raw
+    if a.overlay:
+        fx = out.with_name(out.stem + ".fx.mp4")
+        run(["bash", ROOT / "tools" / "overlay.sh", cur, fx, *a.overlay])
+        cur = fx
+    if a.poster is not None:
+        run(["bash", ROOT / "tools" / "poster.sh", cur, str(a.poster), out])
+    else:
+        shutil.copy(cur, out)
+    for tmp in {raw, out.with_name(out.stem + ".fx.mp4")} - {out}:
+        tmp.unlink(missing_ok=True)
+    print(out)
+
+
+def cmd_port(a):
+    run([sys.executable, ROOT / "tools" / "port.py", a.src, a.out, "--dur", str(a.dur), "--mix", a.mix,
+         "--width", str(a.width), "--height", str(a.height)])
+
+
+def main():
+    ap = argparse.ArgumentParser(prog="kinetix", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("doctor").set_defaults(f=cmd_doctor)
+    p = sub.add_parser("new"); p.add_argument("dir"); p.add_argument("--landscape", action="store_true"); p.set_defaults(f=cmd_new)
+    p = sub.add_parser("sync"); p.add_argument("dir"); p.set_defaults(f=cmd_sync)
+    p = sub.add_parser("music", help="hypebeat: kinetix music gen ..."); p.add_argument("rest", nargs=argparse.REMAINDER); p.set_defaults(f=cmd_music)
+    p = sub.add_parser("mix"); p.add_argument("dir"); p.add_argument("rest", nargs=argparse.REMAINDER); p.set_defaults(f=cmd_mix)
+    p = sub.add_parser("captions"); p.add_argument("dir"); p.add_argument("--lines"); p.set_defaults(f=cmd_captions)
+    p = sub.add_parser("fx"); p.add_argument("kind", choices=["leak", "stinger"]); p.add_argument("-o", "--out", required=True)
+    p.add_argument("--hue", type=float, default=0, help="leak hue shift: 0 amber, 70 pink, 200 cyan, 290 lime")
+    p.add_argument("--seed", type=int, default=3); p.add_argument("--colors"); p.add_argument("--landscape", action="store_true")
+    p.add_argument("--gl", default="swangle", help="remotion --gl (swangle is safe everywhere)"); p.set_defaults(f=cmd_fx)
+    p = sub.add_parser("check"); p.add_argument("dir"); p.add_argument("--samples", type=int); p.set_defaults(f=cmd_check)
+    p = sub.add_parser("snap"); p.add_argument("dir"); p.add_argument("times"); p.set_defaults(f=cmd_snap)
+    p = sub.add_parser("render"); p.add_argument("dir"); p.add_argument("-o", "--out", required=True)
+    p.add_argument("--overlay", action="append", help="file@start[:opacity[:screen|over]], repeatable")
+    p.add_argument("--poster", type=float, help="bake the frame at this time in as frame 0 (thumbnail)")
+    p.add_argument("--quality", default="looks", choices=["draft", "looks", "delivery"]); p.set_defaults(f=cmd_render)
+    p = sub.add_parser("port"); p.add_argument("src"); p.add_argument("out"); p.add_argument("--dur", type=float, required=True)
+    p.add_argument("--mix", default="assets/mix.wav"); p.add_argument("--width", type=int, default=1080)
+    p.add_argument("--height", type=int, default=1920); p.set_defaults(f=cmd_port)
+    a = ap.parse_args()
+    a.f(a)
+
+
+if __name__ == "__main__":
+    main()

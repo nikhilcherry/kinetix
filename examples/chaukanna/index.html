@@ -1,0 +1,487 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Chaukanna Reel</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="hf-bridge.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@500;700;800;900&family=JetBrains+Mono:wght@600&family=Noto+Sans+Devanagari:wght@600;800&family=Noto+Sans+Kannada:wght@700&display=block" rel="stylesheet">
+<style>
+  @font-face { font-family: "Noto Color Emoji"; src: local("Noto Color Emoji"); }
+  :root { --red: #ff2d55; --lime: #d4ff3a; --ink: #f5f5f7; --bg: #07070a; --ca: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+  #root { position: relative; width: 100%; height: 100%; overflow: hidden; }
+  body { font-family: Inter, "Noto Sans Devanagari", "Noto Color Emoji", sans-serif; color: var(--ink); }
+  #stage { position: absolute; inset: 0; background: var(--bg); overflow: hidden; transform-origin: 50% 50%; }
+  .scene { position: absolute; inset: 0; display: none; }
+  .c { position: absolute; left: 50%; transform: translate(-50%, -50%); text-align: center; white-space: nowrap; }
+  .big { font-family: Anton, "Noto Sans Devanagari", "Noto Color Emoji", sans-serif; text-transform: uppercase; line-height: .95;
+         text-shadow: calc(var(--ca) * 1px) 0 rgba(255,0,80,.85), calc(var(--ca) * -1px) 0 rgba(0,240,255,.75); }
+  .mid { font-weight: 900; font-size: 74px; line-height: 1.08; letter-spacing: -1px; }
+  .small { font-weight: 700; font-size: 44px; opacity: .85; }
+  .hl { background: var(--red); color: #fff; padding: .03em .16em; line-height: 1.12; display: inline-block; transform: rotate(-2deg); }
+  .hl.lime { background: var(--lime); color: #000; text-shadow: none; }
+  .red { color: var(--red); } .lime { color: var(--lime); }
+  .tag { display: inline-block; font-weight: 900; font-size: 40px; padding: 8px 22px; border-radius: 40px; background: var(--lime); color: #000; letter-spacing: 1px; }
+
+  /* phone */
+  .phone { position: absolute; left: 50%; width: 720px; height: 1480px; border-radius: 96px; background: #111;
+           border: 16px solid #1d1d22; box-shadow: 0 40px 120px rgba(0,0,0,.6), inset 0 0 0 2px #333; overflow: hidden; transform: translate(-50%, -50%); }
+  .phone img { width: 100%; display: block; }
+  .notch { position: absolute; top: 18px; left: 50%; width: 180px; height: 44px; border-radius: 30px; background: #000; transform: translateX(-50%); z-index: 5; }
+
+  /* incoming call UI */
+  .callui { position: absolute; inset: 0; background: linear-gradient(180deg, #1b2a3a, #0c1118 70%); display: flex; flex-direction: column; align-items: center; padding-top: 200px; }
+  .callui .av { width: 230px; height: 230px; border-radius: 50%; background: #3a4a5c; display: grid; place-items: center; font-size: 120px; position: relative; }
+  .callui .ring { position: absolute; inset: 0; border-radius: 50%; border: 6px solid rgba(255,255,255,.5); }
+  .callui .nm { font-size: 66px; font-weight: 800; margin-top: 60px; }
+  .callui .num { font-size: 44px; opacity: .75; margin-top: 14px; }
+  .callui .sub { font-size: 34px; opacity: .5; margin-top: 10px; }
+  .callui .btns { position: absolute; bottom: 150px; left: 0; right: 0; display: flex; justify-content: space-around; }
+  .callui .btn { width: 150px; height: 150px; border-radius: 50%; display: grid; place-items: center; font-size: 70px; }
+  .wave { display: flex; gap: 12px; align-items: center; height: 160px; margin-top: 70px; }
+  .wave i { display: block; width: 18px; border-radius: 10px; background: var(--red); }
+  .known { margin-top: 30px; background: var(--red); color: #fff; font-weight: 900; font-size: 40px; padding: 12px 28px; border-radius: 18px; }
+
+  .caption { position: absolute; left: 70px; right: 70px; text-align: center; font-weight: 800; font-size: 54px; line-height: 1.25;
+             background: rgba(0,0,0,.72); padding: 26px 30px; border-radius: 26px; }
+  .warrant { position: absolute; left: 50%; top: 52%; width: 800px; padding: 50px; background: #f3ead6; color: #2a2116; border-radius: 10px;
+             transform: translate(-50%, -50%) rotate(-4deg); box-shadow: 0 30px 80px rgba(0,0,0,.6); font-family: Georgia, serif; }
+  .warrant h3 { font-size: 30px; letter-spacing: 3px; text-align: center; } .warrant h2 { font-size: 70px; text-align: center; margin: 20px 0 30px; letter-spacing: 4px; }
+  .warrant p { font-size: 34px; margin: 12px 0; border-bottom: 2px dashed #b5a88c; padding-bottom: 8px; }
+  .stamp { position: absolute; right: 30px; bottom: 50px; border: 10px solid #c4122f; color: #c4122f; font-family: Anton; font-size: 64px; padding: 4px 22px; transform: rotate(-14deg); opacity: .9; }
+  .sms { position: absolute; left: 50%; top: 56%; width: 860px; background: #26262b; border-radius: 40px; padding: 40px 46px; transform: translate(-50%, -50%); font-size: 40px; line-height: 1.35; box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+  .sms b { color: #8fb3ff; font-size: 34px; display: block; margin-bottom: 10px; }
+  .chip { position: absolute; left: 50%; font-weight: 800; font-size: 40px; padding: 20px 30px; border-radius: 26px; background: rgba(20,20,26,.94); border: 3px solid #333; transform: translate(-50%, -50%); white-space: nowrap; box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+  .chip .p { display: inline-block; margin-left: 18px; padding: 4px 16px; border-radius: 14px; font-size: 32px; color: #000; }
+  .notif { position: absolute; left: 50%; width: 940px; background: rgba(245,245,248,.97); color: #111; border-radius: 40px; padding: 26px 34px; transform: translate(-50%, 0);
+           box-shadow: 0 20px 60px rgba(0,0,0,.45); font-size: 36px; line-height: 1.3; }
+  .notif b { font-size: 30px; color: #666; display: block; margin-bottom: 4px; }
+  .row { position: absolute; left: 90px; right: 90px; height: 170px; border-radius: 34px; background: rgba(15,15,20,.9); border: 3px solid #2a2a30; display: flex; align-items: center; gap: 30px; padding: 0 40px; font-weight: 900; font-size: 54px; }
+  .row .ck { font-size: 80px; }
+  .card { position: absolute; left: 70px; right: 70px; border-radius: 40px; padding: 46px; font-weight: 800; font-size: 50px; line-height: 1.25; }
+  .meter { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+  #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+  #vig { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 45%, rgba(255,0,40,.55) 100%); opacity: 0; }
+  #grain { position: absolute; inset: -100px; pointer-events: none; opacity: .09; mix-blend-mode: overlay;
+           background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  #scan { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.12) 0 2px, transparent 2px 5px); opacity: 0; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="60.8" data-width="1080" data-height="1920">
+<div id="stage"></div>
+<div id="vig"></div>
+<div id="scan"></div>
+<div id="grain"></div>
+<div id="flash"></div>
+<audio id="mix" src="assets/mix.wav" data-start="0" data-duration="60.8" data-track-index="10" data-volume="1"></audio>
+</div>
+<script>
+const B = 0.4, BAR = 1.6;
+const DROPS = [[17.6, 28.8], [36.8, 56.0]];
+const HALF = [28.8, 36.8];
+const stage = document.getElementById("stage");
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
+const easeIO = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const back = x => { x = clamp(x); const c = 2.2; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+const seg = new Intl.Segmenter("hi", {granularity: "grapheme"});
+const graphemes = s => Array.from(seg.segment(s), x => x.segment);
+
+const S = [];
+function scene(start, end, html, update) {
+  const el = document.createElement("div");
+  el.className = "scene";
+  el.innerHTML = html;
+  stage.appendChild(el);
+  const q = sel => el.querySelector(sel), qa = sel => [...el.querySelectorAll(sel)];
+  S.push({start, end, el, update: lt => update(lt, q, qa)});
+}
+
+// ---- element animators (all pure functions of time) ----
+function tf(el, {x = 0, y = 0, s = 1, r = 0, o = 1, blur = 0, center = true}) {
+  el.style.opacity = o;
+  el.style.transform = `${center ? "translate(-50%,-50%) " : ""}translate(${x}px,${y}px) scale(${s}) rotate(${r}deg)`;
+  el.style.filter = blur > .3 ? `blur(${blur}px)` : "none";
+}
+function slam(el, lt, at, o = {}) {
+  const {from = 1.9, dur = .16, out = null, outDur = .14, r = 0, center = true, x = 0, y = 0} = o;
+  const p = (lt - at) / dur;
+  if (p < 0) { el.style.opacity = 0; return; }
+  let op = clamp(p * 2.5), s = lerp(from, 1, back(p)), blur = (1 - clamp(p)) * 12;
+  if (out != null && lt > out) { const q = clamp((lt - out) / outDur); op *= 1 - q; s *= 1 + .25 * q; blur += q * 10; }
+  tf(el, {s, o: op, blur, r, center, x, y});
+}
+function rise(el, lt, at, o = {}) {
+  const {dur = .3, dy = 80, out = null, outDur = .2, center = true, x = 0} = o;
+  const p = easeOut((lt - at) / dur);
+  let op = clamp((lt - at) / dur * 1.5);
+  if (lt < at) op = 0;
+  if (out != null && lt > out) op *= 1 - clamp((lt - out) / outDur);
+  tf(el, {y: (1 - p) * dy, o: op, center, x});
+}
+function type(el, text, lt, at, dur) {
+  const g = graphemes(text);
+  el.textContent = g.slice(0, Math.round(clamp((lt - at) / dur) * g.length)).join("");
+  el.style.opacity = lt >= at ? 1 : 0;
+}
+function words(els, lt, at, step) { els.forEach((e, i) => slam(e, lt, at + i * step, {from: 1.5, dur: .12, center: false})); }
+
+// ---- reusable markup ----
+const phone = (inner, top = "50%", cls = "") => `<div class="phone ${cls}" style="top:${top}"><div class="notch"></div>${inner}</div>`;
+const callUI = (extra = "") => `
+  <div class="callui">
+    <div class="av">👤<div class="ring r1"></div><div class="ring r2"></div></div>
+    <div class="nm">Unknown</div><div class="num">+91 90000 30124</div><div class="sub st">mobile · India</div>
+    ${extra}
+    <div class="wave">${"<i></i>".repeat(14)}</div>
+    <div class="btns" data-layout-ignore><div class="btn" style="background:#ff3b30">📞</div><div class="btn gr" style="background:#34c759">📞</div></div>
+  </div>`;
+function ringFx(q, qa, lt) {
+  qa(".ring").forEach((r, i) => { const p = ((lt * .9 + i * .5) % 1); r.style.transform = `scale(${1 + p * .9})`; r.style.opacity = (1 - p) * .8; });
+}
+function waveFx(qa, lt, on, amp = 1) {
+  qa(".wave i").forEach((b, i) => {
+    const h = on ? 20 + amp * 130 * Math.abs(Math.sin(lt * 9 + i * .7) * Math.sin(lt * 3.3 + i * 1.9)) : 0;
+    b.style.height = h + "px";
+  });
+}
+
+// ==================================================================== SCENES
+// S1 cold open: incoming call
+scene(0, 4.8, `
+  <div class="c" style="top:200px"><span class="tag">POV</span></div>
+  <div class="c mid pov" style="top:330px;white-space:normal;width:900px">
+    ${"your nani picks up an unknown number".split(" ").map(w => `<span style="display:inline-block;margin:0 10px">${w}</span>`).join("")}
+  </div>
+  ${phone(callUI(), "1180px", "p1")}
+  <div class="caption cap" style="top:1640px"></div>`,
+  (lt, q, qa) => {
+    words(qa(".pov span"), lt, .15, .1);
+    tf(q(".tag"), {o: lt > .05 ? 1 : 0, s: 1});
+    const answered = lt >= 2.35;
+    const ph = q(".p1");
+    const buzz = !answered ? Math.sin(lt * 90) * 4 * (Math.sin(lt * 6) > 0 ? 1 : 0) : 0;
+    tf(ph, {r: buzz * .3, x: buzz, s: lerp(.82, .9, easeIO((lt - 4.2) / .6))});
+    ringFx(q, qa, lt);
+    qa(".ring").forEach(r => r.style.display = answered ? "none" : "block");
+    q(".gr").style.display = answered ? "none" : "grid";
+    q(".st").textContent = answered ? "00:0" + Math.floor(lt - 2.35) : "incoming call…";
+    q(".av").style.background = answered ? "#7a1c2a" : "#3a4a5c";
+    waveFx(qa, lt, answered && lt > 2.6 && lt < 5.1);
+    type(q(".cap"), "“Madam, main CBI se bol raha hoon…” 🚔", lt, 2.6, 2.2);
+    q(".cap").style.display = lt > 2.6 ? "block" : "none";
+    document.getElementById("vig").style.opacity = answered ? .55 + .45 * Math.sin(lt * 7) : 0;
+  });
+
+// S2 build cards
+scene(4.8, 6.4, `
+  <div class="warrant"><h3>CENTRAL BUREAU OF INVESTIGATION</h3><h2>ARREST WARRANT</h2>
+    <p>Name: KAMALA</p><p>Case: drugs parcel / money laundering</p><p>Status: under digital arrest</p>
+    <div class="stamp" data-layout-allow-overlap>STAY ON CALL</div></div>
+  <div class="c big t" style="top:330px;font-size:150px">“DIGITAL<br><span class="hl">ARREST</span>” 🚔</div>`,
+  (lt, q) => { slam(q(".t"), lt, 0); tf(q(".warrant"), {r: -4 + lt * 2, s: 1.02 + lt * .05, o: 1}); slam(q(".stamp"), lt, .6, {center: false, r: -14}); });
+
+scene(6.4, 8.0, `
+  <div class="c" data-layout-ignore style="top:60%;font-size:520px;opacity:.18">🤫</div>
+  <div class="c big t" style="top:46%;font-size:170px">“DON'T TELL<br><span class="hl">ANYONE.</span>”</div>`,
+  (lt, q) => slam(q(".t"), lt, 0));
+
+scene(8.0, 9.6, `
+  <div class="sms"><b>AD-HDFCBK · now</b>482913 is your OTP for a transaction of <b style="display:inline;color:#fff;font-size:40px">Rs 4,80,000</b>. Do NOT share it with anyone.</div>
+  <div class="c big t" style="top:330px;font-size:170px">“SHARE THE<br><span class="hl">OTP.</span>” 🔢</div>`,
+  (lt, q) => { slam(q(".t"), lt, 0); rise(q(".sms"), lt, .25, {dy: 200}); });
+
+scene(9.6, 12.8, `
+  <div class="c mid a" style="top:42%">bro she's about to lose her</div>
+  <div class="c big b red" style="top:56%;font-size:200px">LIFE SAVINGS 💸</div>
+  <div class="c small p" style="top:72%;font-size:60px">⏸ freeze</div>`,
+  (lt, q) => {
+    rise(q(".a"), lt, 0);
+    slam(q(".b"), lt, 1.6, {from: 2.6});
+    const frozen = lt > 1.6;
+    stage.style.filter = frozen && lt < 2.6 ? "grayscale(1) contrast(1.3)" : "none";
+    q(".p").style.opacity = frozen && lt < 2.6 ? 1 : 0;
+  });
+
+scene(12.8, 16.0, `
+  <div class="c big w0" style="top:30%;font-size:150px">real call.</div>
+  <div class="c big w1" style="top:42%;font-size:150px">real script.</div>
+  <div class="c big w2 red" style="top:56%;font-size:170px">every. single. day.</div>
+  <div class="c w3" style="top:68%;font-size:150px">🇮🇳</div>
+  <div class="caption cap" style="top:1660px;font-size:44px;color:#ffb3c1"></div>`,
+  (lt, q) => {
+    slam(q(".w0"), lt, 0); slam(q(".w1"), lt, .8); slam(q(".w2"), lt, 1.6); slam(q(".w3"), lt, 2.4);
+    type(q(".cap"), "📞 “Aapke naam pe drugs ka parcel mila hai… kisi ko mat batana… OTP bataiye.”", lt, .2, 4.6);
+  });
+
+scene(16.0, 17.2, `<div class="c mid t" style="top:50%;white-space:normal;width:900px">and nobody's on the call with her.</div>`,
+  (lt, q) => { const p = easeIO(lt / 1.2); tf(q(".t"), {s: lerp(1, 1.5, p), o: clamp(lt * 4)}); });
+
+scene(17.2, 17.6, `<div class="c t" style="top:50%;font-size:64px;font-style:italic;font-weight:500">unless…</div>`,
+  (lt, q) => tf(q(".t"), {o: clamp(lt * 8)}));
+
+// S3 drop 1
+const EYE = `<svg width="300" height="170" viewBox="0 0 300 170"><path d="M10 85 Q150 -40 290 85 Q150 210 10 85Z" fill="#fff"/><circle class="iris" cx="150" cy="85" r="52" fill="#ff2d55"/><circle class="pupil" cx="150" cy="85" r="22" fill="#000"/><circle cx="168" cy="68" r="9" fill="#fff"/></svg>`;
+scene(17.6, 20.8, `
+  <div class="c glow" style="top:44%;width:1400px;height:1400px;border-radius:50%;background:radial-gradient(circle, rgba(255,45,85,.45), transparent 60%)"></div>
+  <div class="c shock" style="top:44%;width:400px;height:400px;border-radius:50%;border:14px solid #fff"></div>
+  <div class="c eye" style="top:33%">${EYE}</div>
+  <div class="c big logo" style="top:47%;font-size:200px;letter-spacing:4px">CHAUKANNA</div>
+  <div class="c mid s1" style="top:60%">the guardian that</div>
+  <div class="c big s2" style="top:69%;font-size:170px"><span class="hl lime">LISTENS</span> 👂</div>
+  <div class="c small s3" style="top:83%;font-size:40px">chaukanna (adj.) = always alert, all eyes open 👀</div>`,
+  (lt, q) => {
+    slam(q(".logo"), lt, 0, {from: 3}); slam(q(".eye"), lt, .05, {from: 0.2, dur: .25});
+    const sp = clamp(lt / .6); tf(q(".shock"), {s: lerp(.2, 4, easeOut(sp)), o: 1 - sp});
+    tf(q(".glow"), {s: 1 + .08 * Math.exp(-((lt % B) / .1)), o: 1});
+    rise(q(".s1"), lt, .8); slam(q(".s2"), lt, 1.6); rise(q(".s3"), lt, 2.2);
+    q(".pupil").setAttribute("cx", 150 + 18 * Math.sin(lt * 2.4));
+    q(".iris").setAttribute("cx", 150 + 12 * Math.sin(lt * 2.4));
+  });
+
+scene(20.8, 24.0, `
+  ${phone('<img src="assets/app-3-call-rising-pressure.png">', "1150px", "ph")}
+  <div class="c big t" style="top:190px;font-size:130px">it hears the call <span class="hl">● LIVE</span></div>
+  <div class="chip k0" style="top:1180px">😈 “मैं CBI से बोल रहा हूँ” <span class="p" style="background:#ffd23a">p1</span></div>
+  <div class="chip k1" style="top:1330px">😈 “किसी को मत बताइए” <span class="p" style="background:#ff8a3a">p2</span></div>
+  <div class="chip k2" style="top:1480px">😈 “OTP बताइए” <span class="p" style="background:#ff2d55;color:#fff">p3</span></div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0);
+    const p = easeOut(lt / .4); tf(q(".ph"), {y: (1 - p) * 900, s: .78});
+    slam(q(".k0"), lt, .8, {from: 1.4}); slam(q(".k1"), lt, 1.6, {from: 1.4}); slam(q(".k2"), lt, 2.4, {from: 1.4});
+  });
+
+const gauge = `<svg width="900" height="560" viewBox="0 0 900 560">
+  <path d="M90 470 A360 360 0 0 1 810 470" fill="none" stroke="#222" stroke-width="70" stroke-linecap="round"/>
+  <path class="arc" d="M90 470 A360 360 0 0 1 810 470" fill="none" stroke="#ff2d55" stroke-width="70" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/>
+  <g class="needle"><rect x="440" y="150" width="20" height="330" rx="10" fill="#fff"/></g><circle cx="450" cy="470" r="40" fill="#fff"/>
+  <text x="90" y="545" fill="#888" font-family="Inter" font-weight="800" font-size="34" text-anchor="middle">CHILL</text>
+  <text x="810" y="545" fill="#ff2d55" font-family="Inter" font-weight="800" font-size="34" text-anchor="middle">SCAM</text></svg>`;
+scene(24.0, 26.4, `
+  <div class="c big t" style="top:250px;font-size:120px;white-space:normal;width:980px">catches the scam <span class="hl">in real time</span></div>
+  <div class="meter m" style="top:52%">${gauge}</div>
+  <div class="c big lvl" style="top:64%;font-size:220px">P0</div>
+  <div class="chip g0" style="top:1500px;left:30%">🚔 authority</div>
+  <div class="chip g1" style="top:1500px;left:70%">🤫 secrecy</div>
+  <div class="chip g2" style="top:1650px;left:30%">🔢 OTP ask</div>
+  <div class="chip g3" style="top:1650px;left:70%">⚖️ legal threat</div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0);
+    const lvl = clamp(Math.floor((lt - .2) / B), 0, 3);
+    const sm = clamp((lt - .2) / (3 * B)) * 3, v = Math.min(3, Math.floor(sm) + easeOut((sm % 1) * 3));
+    q(".arc").setAttribute("stroke-dasharray", `${v / 3 * 100} 100`);
+    q(".needle").setAttribute("transform", `rotate(${-90 + v / 3 * 180} 450 470)`);
+    q(".lvl").textContent = "P" + lvl;
+    q(".lvl").style.color = ["#fff", "#ffd23a", "#ff8a3a", "#ff2d55"][lvl];
+    ["g0", "g1", "g2", "g3"].forEach((g, i) => slam(q("." + g), lt, .4 + i * .4, {from: 1.5}));
+  });
+
+scene(26.4, 28.8, `
+  <div class="c lines" style="top:50%;width:1600px;height:2400px;background:repeating-linear-gradient(90deg, transparent 0 60px, rgba(255,255,255,.05) 60px 64px)"></div>
+  <div class="c big n" style="top:42%;font-size:330px">0.00s</div>
+  <div class="c mid t" style="top:60%;white-space:normal;width:960px">scammer's words <span class="lime">→</span> warning in her ear</div>
+  <div class="c small u" style="top:72%">measured on a real call · median 0.96 s</div>`,
+  (lt, q) => {
+    slam(q(".n"), lt, 0);
+    q(".n").textContent = "~" + (0.96 * easeOut(lt / .8)).toFixed(2) + "s";
+    q(".lines").style.transform = `translate(-50%,-50%) translateX(${-(lt * 900) % 64}px)`;
+    rise(q(".t"), lt, .5); rise(q(".u"), lt, 1.1);
+  });
+
+// S4 half-time whisper
+scene(28.8, 32.0, `
+  <div class="c ear" style="top:30%;font-size:300px">👂</div>
+  ${[0, 1, 2, 3].map(i => `<div class="c rr rr${i}" style="top:30%;width:420px;height:420px;border-radius:50%;border:5px solid #7cc4ff"></div>`).join("")}
+  <div class="c big t stroke" style="top:55%;font-size:140px;-webkit-text-stroke:4px #000;paint-order:stroke fill">then it <span class="hl lime">WHISPERS</span></div>
+  <div class="c mid t2" style="top:64%">only to her 🤫</div>
+  <div class="caption cap" style="top:1580px;color:#bfe3ff;font-size:58px;background:rgba(10,30,50,.85)"></div>`,
+  (lt, q, qa) => {
+    stage.style.background = "radial-gradient(circle at 50% 30%, #10263a, #050608 70%)";
+    qa(".rr").forEach((r, i) => { const p = ((lt * .5 + i * .25) % 1); tf(r, {s: .6 + p * 1.8, o: (1 - p) * .7}); });
+    tf(q(".ear"), {s: 1 + .03 * Math.sin(lt * 4)});
+    slam(q(".t"), lt, 0); rise(q(".t2"), lt, .5);
+    type(q(".cap"), "🔊 “Yeh scam hai. OTP mat dijiye. Call kaat dijiye.”", lt, .6, 3.6);
+    q(".cap").style.display = lt > .6 ? "block" : "none";
+  });
+
+scene(32.0, 34.4, `
+  <div style="position:absolute;left:0;right:0;top:0;height:50%;background:#1a0a0e"></div>
+  <div class="c mid" style="top:12%">😈 SCAMMER</div>
+  <div class="chip b0" style="top:24%">“hello? madam??”</div>
+  <div class="chip b1" style="top:34%">“madam OTP bataiye…”</div>
+  <div class="c mid" style="top:67%">👵 NANI</div>
+  <div class="c small h" style="top:74%">hears the warning. he hears nothing.</div>
+  <div class="c big boom" style="top:50%;font-size:150px;white-space:normal;width:1000px;line-height:1">scammer has <span class="hl">NO IDEA</span> 💀</div>`,
+  (lt, q) => {
+    stage.style.background = "#08130d";
+    rise(q(".b0"), lt, .1); rise(q(".b1"), lt, .6); rise(q(".h"), lt, .3);
+    slam(q(".boom"), lt, 1.2, {from: 3});
+  });
+
+scene(34.4, 36.8, `
+  ${phone(`<div class="callui" style="background:linear-gradient(180deg,#2a0d12,#0c0608 70%)"><div class="av">👤</div><div class="nm">Call ended</div><div class="num">00:53</div><div class="sub">+91 90000 30124</div></div>`, "50%", "ph")}
+  <div class="c big t1" style="top:230px;font-size:140px">call: <span class="hl">ENDED.</span></div>
+  <div class="c big t2" style="top:1700px;font-size:140px">scammer: <span class="hl lime">COOKED</span> 🍳</div>`,
+  (lt, q) => { tf(q(".ph"), {s: .8, o: 1}); slam(q(".t1"), lt, .1); slam(q(".t2"), lt, 1.0, {from: 2.6}); });
+
+// S5 drop 2: the fam
+const NOTIFS = [["👪 Family · Chaukanna 🛡️", "⚠️ Kamala is on a suspicious call RIGHT NOW"], ["👪 Family · Ravi", "calling amma now 📞"], ["👪 Family · Priya", "😨😨 is she ok??"], ["👪 Family · Chaukanna 🛡️", "🚨 Kamala got a scam call · report + recording"], ["👪 Family · Arjun", "W app ngl 🫡"]];
+scene(36.8, 39.2, `
+  ${phone('<img src="assets/family-chat.png">', "1180px", "ph")}
+  <div class="c big t" style="top:180px;font-size:120px;white-space:normal;width:1000px">the fam gets pinged <span class="hl lime">INSTANTLY</span> 📲</div>
+  ${NOTIFS.map((n, i) => `<div class="notif n${i}"><b>${n[0]}</b>${n[1]}</div>`).join("")}`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0);
+    const p = easeOut(lt / .35); tf(q(".ph"), {y: (1 - p) * 900, s: .82});
+    NOTIFS.forEach((_, i) => {
+      const at = .4 + i * B, el = q(".n" + i);
+      const k = easeOut((lt - at) / .2);
+      el.style.top = (420 + i * 150) + "px";
+      el.style.opacity = lt > at ? 1 : 0;
+      el.style.transform = `translate(calc(-50% + ${(1 - k) * 1100}px), 0)`;
+    });
+  });
+
+scene(39.2, 42.4, `
+  <div class="phone ph" style="top:1150px;background:#ece5dd"><div class="notch"></div><img class="scr" src="assets/family-report.png" style="margin-top:170px;transform-origin:50% 0"></div>
+  <div class="c big l0" style="top:150px;font-size:110px"><span class="hl">WHO CALLED</span></div>
+  <div class="c big l1" style="top:270px;font-size:110px"><span class="hl">WHAT THEY SAID</span></div>
+  <div class="c big l2" style="top:390px;font-size:110px"><span class="hl lime">FULL RECORDING</span> 🎙️</div>`,
+  (lt, q) => {
+    tf(q(".ph"), {s: .8, o: 1});
+    q(".scr").style.transform = `scale(${lerp(1, 1.12, easeIO(lt / 3.2))})`;
+    slam(q(".l0"), lt, .4); slam(q(".l1"), lt, 1.2); slam(q(".l2"), lt, 2.0);
+  });
+
+scene(42.4, 45.6, `
+  <img src="assets/stage-view.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(6px) brightness(.35)">
+  <div class="c big t" style="top:330px;font-size:120px">and it handles the <span class="hl">paperwork</span></div>
+  <div class="row r0" style="top:620px"><span class="ck">✅</span>1930 complaint drafted</div>
+  <div class="row r1" style="top:830px"><span class="ck">✅</span>number on the scam list</div>
+  <div class="row r2" style="top:1040px"><span class="ck">✅</span>evidence saved</div>
+  <div class="c small u" style="top:1340px">automated with n8n · Sarvam · Supabase</div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0);
+    ["r0", "r1", "r2"].forEach((r, i) => slam(q("." + r), lt, i * .8, {from: 1.3, center: false}));
+    rise(q(".u"), lt, 2.4);
+  });
+
+scene(45.6, 48.0, `
+  ${phone(callUI('<div class="known">⚠️ KNOWN SCAMMER</div>'), "1150px", "ph")}
+  <div class="c big t" style="top:180px;font-size:130px">he calls back?</div>
+  <div class="c big st" data-layout-allow-overlap style="top:1480px;font-size:200px;color:#ff2d55;border:16px solid #ff2d55;padding:10px 40px;border-radius:20px;background:rgba(0,0,0,.6)">FLAGGED</div>
+  <div class="c mid t2" style="top:1780px">caught in the <span class="hl">FIRST</span> sentence</div>`,
+  (lt, q, qa) => {
+    slam(q(".t"), lt, 0); tf(q(".ph"), {s: .78, o: 1}); ringFx(q, qa, lt); waveFx(qa, lt, false);
+    slam(q(".st"), lt, .8, {from: 3.2, r: -12}); rise(q(".t2"), lt, 1.2);
+  });
+
+// S6 flex
+scene(48.0, 49.6, `
+  <div class="card cd" style="top:520px;background:#0f2a1a;border:4px solid #2ecc71">🛵 delivery guy:<br><span style="font-weight:600">“OTP batao, parcel ke liye”</span><div style="margin-top:24px;color:#2ecc71;font-size:44px">● P0 · CHILL · no alarm</div></div>
+  <div class="c big t" style="top:1250px;font-size:140px">it doesn't<br><span class="hl lime">cry wolf</span> 🐺❌</div>`,
+  (lt, q) => { rise(q(".cd"), lt, 0, {center: false, dy: 120}); slam(q(".t"), lt, .4); });
+
+scene(49.6, 51.2, `
+  <div class="card cd" style="top:520px;background:#0f2a1a;border:4px solid #2ecc71">👨 Ravi (saved contact):<br><span style="font-weight:600">“Amma, gas wala OTP bhejna”</span><div style="margin-top:24px;color:#2ecc71;font-size:44px">● trusted · CHILL</div></div>
+  <div class="c big t" style="top:1250px;font-size:130px">trusted fam?<br><span class="hl lime">chill mode</span> 😌</div>`,
+  (lt, q) => { rise(q(".cd"), lt, 0, {center: false, dy: 120}); slam(q(".t"), lt, .4); });
+
+scene(51.2, 56.0, `
+  <div class="c big s0 lime" style="top:40%;font-size:420px">28/28</div>
+  <div class="c mid s0b" style="top:57%">scams caught in testing</div>
+  <div class="c big s1" style="top:40%;font-size:460px">0</div>
+  <div class="c mid s1b" style="top:57%;white-space:normal;width:960px">false alarms on 19 normal calls</div>
+  <div class="c big s2" style="top:40%;font-size:120px;font-family:Anton,'Noto Sans Devanagari','Noto Sans Kannada'">हिंदी · English · ಕನ್ನಡ</div>
+  <div class="c mid s2b" style="top:52%">speaks nani's language 🗣️</div>`,
+  (lt, q) => {
+    slam(q(".s0"), lt, 0, {out: 1.5, from: 2.6}); rise(q(".s0b"), lt, .2, {out: 1.5});
+    slam(q(".s1"), lt, 1.6, {out: 3.1, from: 2.6}); rise(q(".s1b"), lt, 1.8, {out: 3.1});
+    slam(q(".s2"), lt, 3.2, {from: 2}); rise(q(".s2b"), lt, 3.5);
+  });
+
+// S7 outro
+scene(56.0, 60.8, `
+  <div class="c mid a" style="top:44%;font-weight:700">you can't be on every call.</div>
+  <div class="c eye" style="top:33%">${EYE}</div>
+  <div class="c big logo" style="top:46%;font-size:200px;letter-spacing:4px">CHAUKANNA</div>
+  <div class="c mid b" style="top:55%">can. 👁️</div>
+  <div class="c big c2" style="top:65%;font-size:110px"><span class="hl lime">protect your people.</span></div>
+  <div class="c small u" style="top:80%;font-size:40px">github.com/nikhilcherry/chaukanna</div>
+  <div class="c small u2" style="top:84%;font-size:34px;opacity:.55">built in 24h · Hack Sprint · MIT Bengaluru</div>`,
+  (lt, q) => {
+    stage.style.background = "radial-gradient(circle at 50% 45%, #2a0d16, #07070a 70%)";
+    rise(q(".a"), lt, .1, {out: 1.4});
+    slam(q(".logo"), lt, 1.6, {from: 3}); slam(q(".eye"), lt, 1.65, {from: .2, dur: .25});
+    rise(q(".b"), lt, 2.0); slam(q(".c2"), lt, 2.4); rise(q(".u"), lt, 3.2); rise(q(".u2"), lt, 3.4);
+    q(".pupil").setAttribute("cx", 150 + 14 * Math.sin(lt * 2));
+    const fade = clamp((lt - 4.3) / .5); stage.style.opacity = 1 - fade;
+  });
+
+// ==================================================================== global FX
+function inWin(t, [a, b]) { return t >= a && t < b; }
+function seek(t) {
+  stage.style.filter = "none"; stage.style.background = ""; stage.style.opacity = 1;
+  document.getElementById("vig").style.opacity = 0;
+  for (const s of S) {
+    const on = t >= s.start && t < s.end;
+    s.el.style.display = on ? "block" : "none";
+    if (on) s.update(t - s.start);
+  }
+  // beat shake + zoom punch + chromatic aberration
+  let amp = 0, punch = 0, ca = 0;
+  const drop = DROPS.find(w => inWin(t, w));
+  if (drop) {
+    const bi = Math.floor((t - drop[0]) / B), ph = (t - drop[0]) % B, bar = bi % 4 === 0;
+    amp = (bar ? 16 : 7) * Math.exp(-ph / .07);
+    punch = bar ? .035 * Math.exp(-ph / .12) : .012 * Math.exp(-ph / .08);
+    ca = 2 + amp * .6;
+    var seed = bi;
+  } else if (inWin(t, HALF)) {
+    const ph = (t - HALF[0]) % BAR; amp = 6 * Math.exp(-ph / .1); ca = 1; var seed = Math.floor(t / BAR);
+  } else if (t >= 4.8 && t < 17.2) {
+    const ph = (t - 4.8) % BAR; amp = 10 * Math.exp(-ph / .08); punch = .02 * Math.exp(-ph / .1); ca = 1 + amp * .5; var seed = Math.floor(t / BAR);
+  }
+  if (t >= 33.2 && t < 33.6) { const ph = t - 33.2; amp += 26 * Math.exp(-ph / .12); punch += .06 * Math.exp(-ph / .15); ca += 8 * Math.exp(-ph / .1); }
+  if (t >= 46.4 && t < 46.8) { const ph = t - 46.4; amp += 22 * Math.exp(-ph / .1); ca += 6 * Math.exp(-ph / .1); }
+  const sd = seed ?? 0, dx = (hash(sd) - .5) * 2 * amp, dy = (hash(sd + 9.1) - .5) * 2 * amp;
+  stage.style.transform = `translate(${dx}px,${dy}px) scale(${1 + punch})`;
+  document.documentElement.style.setProperty("--ca", ca.toFixed(2));
+  // flashes
+  let fl = 0;
+  for (const [at, s] of [[17.6, 1], [36.8, 1], [57.6, .8], [2.35, .25], [11.2, .5], [46.4, .35]]) if (t >= at) fl = Math.max(fl, s * Math.exp(-(t - at) / .12));
+  for (let k = 0; k < 8; k++) { const at = 4.8 + k * BAR; if (t >= at) fl = Math.max(fl, .25 * Math.exp(-(t - at) / .06)); }
+  document.getElementById("flash").style.opacity = fl.toFixed(3);
+  document.getElementById("scan").style.opacity = drop ? .5 : .25;
+  const g = document.getElementById("grain");
+  g.style.transform = `translate(${(hash(Math.floor(t * 24)) - .5) * 100}px,${(hash(Math.floor(t * 24) + 3) - .5) * 100}px)`;
+}
+// shrink any headline wider than the frame (measured once, untransformed)
+function fitAll() {
+  S.forEach(s => s.el.style.display = "block");
+  document.querySelectorAll(".c.big, .c.mid").forEach(el => {
+    const max = 1000;
+    let fs = parseFloat(getComputedStyle(el).fontSize);
+    while (el.scrollWidth > max && fs > 30) { fs -= 4; el.style.fontSize = fs + "px"; }
+  });
+  S.forEach(s => s.el.style.display = "none");
+}
+window.loadFonts = () => Promise.all(["100px Anton", "900 50px Inter", "800 50px Inter", "700 50px Inter", "500 50px Inter",
+  "600 50px 'JetBrains Mono'", "800 50px 'Noto Sans Devanagari'", "600 50px 'Noto Sans Devanagari'", "700 50px 'Noto Sans Kannada'"]
+  .map(f => document.fonts.load(f, "AहಕA"))).then(() => document.fonts.ready);
+window.fitAll = fitAll;
+window.seek = seek;
+window.DUR = 60.8;
+
+// preview mode: open reel.html normally, click to play with sound
+reelkit.register({ dur: 60.8, seek, before: async () => { await loadFonts(); fitAll(); } })
+  .then(({ timeline }) => { window.__timelines["main"] = timeline; });
+</script>
+</body>
+</html>

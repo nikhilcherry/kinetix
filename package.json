@@ -1,0 +1,7 @@
+{
+  "name": "kinetix",
+  "private": true,
+  "description": "Beat-synced vertical reels from code: HyperFrames render + Remotion FX + MusicGen beds.",
+  "dependencies": { "hyperframes": "0.8.174" },
+  "engines": { "node": ">=22" }
+}

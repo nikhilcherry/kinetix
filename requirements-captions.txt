@@ -1,0 +1,2 @@
+# word-timed captions (kinetix captions)
+faster-whisper>=1.0

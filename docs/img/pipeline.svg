@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="560" viewBox="0 0 1600 560" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b0a1a"/><stop offset="1" stop-color="#131030"/></linearGradient>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#c8ff3d"/></marker>
+    <style>
+      .box{fill:#17142e;stroke:#3a3470;stroke-width:2}
+      .hot{stroke:#c8ff3d;stroke-width:3}
+      .t{fill:#f5f5f7;font-weight:800;font-size:22px}
+      .s{fill:#a9a3d6;font-weight:600;font-size:15px}
+      .c{fill:#c8ff3d;font-family:"JetBrains Mono",Consolas,monospace;font-weight:700;font-size:14px}
+      .ln{stroke:#c8ff3d;stroke-width:3;fill:none;marker-end:url(#ar)}
+      .lnd{stroke:#6f66b8;stroke-width:2.5;fill:none;stroke-dasharray:7 6;marker-end:url(#ar)}
+      .h{fill:#ff3d8b;font-weight:900;font-size:13px;letter-spacing:2px}
+    </style>
+  </defs>
+  <rect width="1600" height="560" rx="28" fill="url(#bg)"/>
+  <text x="40" y="52" class="h">SOUND</text>
+  <text x="40" y="300" class="h">PICTURE</text>
+  <text x="1010" y="52" class="h">SHIP</text>
+
+  <!-- sound row -->
+  <rect class="box" x="40" y="72" width="280" height="140" rx="18"/>
+  <text x="62" y="110" class="t">🎵 MusicGen bed</text>
+  <text x="62" y="138" class="s">real music, auditioned for tempo,</text>
+  <text x="62" y="158" class="s">stretched onto an exact BPM grid</text>
+  <text x="62" y="190" class="c">kinetix music gen</text>
+
+  <rect class="box" x="380" y="72" width="300" height="140" rx="18"/>
+  <text x="402" y="110" class="t">🥁 music.py + hits.py</text>
+  <text x="402" y="138" class="s">drops, risers, silence gaps, stutters,</text>
+  <text x="402" y="158" class="s">260 CC0 sounds, placed by beat</text>
+  <text x="402" y="190" class="c">kinetix mix</text>
+  <path class="ln" d="M320 142 L376 142"/>
+
+  <!-- picture row -->
+  <rect class="box" x="40" y="320" width="280" height="140" rx="18"/>
+  <text x="62" y="358" class="t">💬 Captions</text>
+  <text x="62" y="386" class="s">Whisper word timings, aligned to</text>
+  <text x="62" y="406" class="s">your script; TikTok-style pages</text>
+  <text x="62" y="438" class="c">kinetix captions</text>
+
+  <rect class="box hot" x="380" y="320" width="300" height="140" rx="18"/>
+  <text x="402" y="358" class="t">🎬 index.html</text>
+  <text x="402" y="386" class="s">scenes as code, every frame = f(t):</text>
+  <text x="402" y="406" class="s">springs, shake, glitch, chroma</text>
+  <text x="402" y="438" class="c">kinetix new · snap</text>
+  <path class="ln" d="M320 390 L376 390"/>
+  <path class="lnd" d="M530 212 L530 316"/>
+  <text x="542" y="270" class="s">mix.wav, same grid</text>
+
+  <!-- ship column -->
+  <rect class="box" x="760" y="196" width="220" height="140" rx="18"/>
+  <text x="782" y="234" class="t">🌉 bridge</text>
+  <text x="782" y="262" class="s">your seek(t) becomes a</text>
+  <text x="782" y="282" class="s">HyperFrames composition</text>
+  <text x="782" y="314" class="c">hf-bridge.js</text>
+  <path class="ln" d="M680 390 C720 390 720 300 756 290"/>
+  <path class="ln" d="M680 142 C720 142 720 240 756 248"/>
+
+  <rect class="box hot" x="1010" y="72" width="260" height="120" rx="18"/>
+  <text x="1032" y="110" class="t">✅ check gate</text>
+  <text x="1032" y="138" class="s">overlap · overflow · hidden</text>
+  <text x="1032" y="158" class="s">text · contrast, every ½ s</text>
+  <text x="1032" y="180" class="c">kinetix check</text>
+
+  <rect class="box" x="1010" y="220" width="260" height="120" rx="18"/>
+  <text x="1032" y="258" class="t">⚡ render</text>
+  <text x="1032" y="286" class="s">parallel, frame-exact,</text>
+  <text x="1032" y="306" class="s">audio muxed</text>
+  <text x="1032" y="328" class="c">kinetix render</text>
+
+  <rect class="box" x="1010" y="368" width="260" height="120" rx="18"/>
+  <text x="1032" y="406" class="t">✨ Remotion FX</text>
+  <text x="1032" y="434" class="s">light leaks screened in,</text>
+  <text x="1032" y="454" class="s">wipe stingers on cuts</text>
+  <text x="1032" y="476" class="c">kinetix fx · --overlay</text>
+
+  <path class="ln" d="M980 250 C995 250 995 132 1006 132"/>
+  <path class="ln" d="M1140 192 L1140 216"/>
+  <path class="ln" d="M1140 340 L1140 364"/>
+
+  <rect class="box hot" x="1320" y="196" width="240" height="140" rx="18"/>
+  <text x="1342" y="234" class="t">🖼 out.mp4</text>
+  <text x="1342" y="262" class="s">best frame baked in as</text>
+  <text x="1342" y="282" class="s">frame 0 = the thumbnail</text>
+  <text x="1342" y="314" class="c">--poster 9.6</text>
+  <path class="ln" d="M1270 428 C1300 428 1300 290 1316 280"/>
+</svg>

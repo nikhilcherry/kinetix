@@ -1,0 +1,661 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Connect Reel</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="hf-bridge.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Permanent+Marker&family=Inter:wght@500;700;800;900&family=Noto+Sans+Devanagari:wght@700;800&family=Noto+Sans+Kannada:wght@700&family=Noto+Sans+Tamil:wght@700&display=block" rel="stylesheet">
+<style>
+  @font-face { font-family: "Noto Color Emoji"; src: local("Noto Color Emoji"); }
+  @font-face { font-family: "Space Grotesk"; src: url(assets/space-grotesk-700.ttf); font-weight: 700; }
+  :root { --vi: #5a45c9; --vi2: #8b7bff; --lime: #c8ff3d; --pink: #ff3d8b; --ink: #f4f2ff; --bg: #0d0b22; --ca: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+  #root { position: relative; width: 100%; height: 100%; overflow: hidden; }
+  body { font-family: Inter, "Noto Sans Devanagari", "Noto Color Emoji", sans-serif; color: var(--ink); }
+  #stage { position: absolute; inset: 0; background: var(--bg); overflow: hidden; transform-origin: 50% 50%; }
+  .scene { position: absolute; inset: 0; display: none; }
+  .c { position: absolute; left: 50%; transform: translate(-50%, -50%); text-align: center; white-space: nowrap; }
+  .big { font-family: Anton, "Noto Sans Devanagari", "Noto Sans Kannada", "Noto Sans Tamil", "Noto Color Emoji", sans-serif; text-transform: uppercase; line-height: .95;
+         text-shadow: calc(var(--ca) * 1px) 0 rgba(255,61,139,.85), calc(var(--ca) * -1px) 0 rgba(0,230,255,.75); }
+  .brandf { font-family: "Space Grotesk", Inter, sans-serif; font-weight: 700; text-transform: none; letter-spacing: -4px; }
+  .mid { font-weight: 900; font-size: 72px; line-height: 1.08; letter-spacing: -1px; }
+  .small { font-weight: 700; font-size: 44px; opacity: .85; }
+  .hl { background: var(--vi); color: #fff; padding: .03em .16em; line-height: 1.12; display: inline-block; transform: rotate(-2deg); }
+  .hl.lime { background: var(--lime); color: #0d0b22; text-shadow: none; }
+  .hl.pink { background: var(--pink); color: #fff; }
+  .lime { color: var(--lime); } .pink { color: var(--pink); } .vi { color: var(--vi2); }
+  .tag { display: inline-block; font-weight: 900; font-size: 40px; padding: 8px 24px; border-radius: 40px; background: var(--lime); color: #0d0b22; letter-spacing: 1px; }
+  .stroke { -webkit-text-stroke: 3px #000; paint-order: stroke fill; }
+
+  .phone { position: absolute; left: 50%; width: 720px; height: 1480px; border-radius: 92px; background: #eeedf8;
+           border: 16px solid #1b1838; box-shadow: 0 40px 140px rgba(90,69,201,.45), inset 0 0 0 2px #333; overflow: hidden; transform: translate(-50%, -50%); }
+  .phone img, .phone video { width: 100%; display: block; position: absolute; top: 0; left: 0; }
+  .phone.dark { background: #171335; }
+  .phone .sb { position: absolute; top: 0; left: 0; right: 0; height: 74px; background: #eeedf8; color: #171335; font-weight: 700; font-size: 26px; padding: 22px 48px 0; display: flex; justify-content: space-between; z-index: 4; }
+  .phone img.web { top: 74px; }
+  .notch { position: absolute; top: 16px; left: 50%; width: 170px; height: 42px; border-radius: 30px; background: #000; transform: translateX(-50%); z-index: 5; }
+  .real { position: absolute; right: 40px; top: 120px; z-index: 6; background: var(--pink); color: #fff; font-weight: 900; font-size: 30px; padding: 8px 18px; border-radius: 12px; transform: rotate(4deg); }
+
+  .caption { position: absolute; left: 60px; right: 60px; text-align: center; font-weight: 900; font-size: 58px; line-height: 1.22;
+             background: rgba(0,0,0,.78); padding: 24px 30px; border-radius: 26px; }
+  .notif { position: absolute; left: 50%; width: 940px; background: rgba(248,247,255,.97); color: #171335; border-radius: 40px; padding: 26px 34px 28px 128px;
+           transform: translate(-50%, 0); box-shadow: 0 24px 70px rgba(0,0,0,.5); font-size: 38px; line-height: 1.28; font-weight: 600; }
+  .notif b { font-size: 29px; color: #575279; display: block; margin-bottom: 4px; font-weight: 700; }
+  .notif .ic { position: absolute; left: 28px; top: 30px; width: 76px; height: 76px; }
+  .chip { position: absolute; left: 50%; font-weight: 900; font-size: 46px; padding: 20px 32px; border-radius: 26px; background: rgba(23,19,53,.95); border: 4px solid var(--vi2);
+          transform: translate(-50%, -50%); white-space: nowrap; box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+  .card { position: absolute; left: 50%; transform: translate(-50%,-50%); }
+  #caps { position: absolute; left: 50px; right: 50px; display: none; text-align: center; font-family: Inter, sans-serif; font-weight: 900;
+          font-size: 74px; line-height: 1.15; text-transform: uppercase; color: #fff; -webkit-text-stroke: 5px #000; paint-order: stroke fill;
+          text-shadow: 0 8px 24px rgba(0,0,0,.6); transform-origin: 50% 50%; }
+  #caps span { display: inline-block; margin: 0 10px; transform-origin: 50% 60%; }
+  #caps span.on { color: #0d0b22; -webkit-text-stroke: 0; background: var(--lime); padding: 0 14px; border-radius: 14px; text-shadow: none; }
+  #caps span.next { opacity: .55; }
+  #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+  #vig { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 45%, rgba(255,40,90,.5) 100%); opacity: 0; }
+  #grain { position: absolute; inset: -100px; pointer-events: none; opacity: .08; mix-blend-mode: overlay;
+           background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  #scan { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.12) 0 2px, transparent 2px 5px); opacity: 0; }
+  .lot { position: absolute; inset: 0; background: #23213a; }
+  .lot::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 236px, rgba(255,255,255,.55) 236px 248px); opacity: .35; }
+  .honk { position: absolute; z-index: 5; font-family: Anton; font-size: 110px; color: var(--lime); -webkit-text-stroke: 4px #000; paint-order: stroke fill; transform: translate(-50%,-50%); }
+  .note { position: absolute; left: 50%; top: 56%; width: 640px; padding: 50px 46px; background: #fff7a8; color: #2b2a1a; transform: translate(-50%,-50%) rotate(-5deg);
+          font-family: "Permanent Marker", cursive; font-size: 58px; line-height: 1.25; box-shadow: 0 30px 70px rgba(0,0,0,.5); }
+  .dash { position: absolute; left: 50%; top: 58%; width: 900px; height: 420px; border-radius: 40px 40px 10px 10px; background: linear-gradient(#2c2a40, #15131f);
+          transform: translate(-50%,-50%); box-shadow: inset 0 8px 0 #3d3a58; }
+  .dash .paper { position: absolute; left: 140px; top: 70px; width: 620px; height: 230px; background: #fff; color: #111; transform: rotate(-3deg); display: grid; place-items: center;
+                 font-family: "Permanent Marker", cursive; font-size: 64px; }
+  .spam { position: absolute; left: 50%; width: 900px; padding: 26px 34px; border-radius: 34px; background: rgba(30,28,48,.96); border: 3px solid #3a3658; font-size: 38px; font-weight: 700; transform: translate(-50%, 0); }
+  .spam b { color: var(--pink); }
+  .bars { display: flex; gap: 22px; align-items: flex-end; height: 300px; }
+  .bars i { display: block; width: 70px; background: var(--ink); border-radius: 10px; }
+  .wavebox { display: flex; gap: 10px; align-items: center; height: 380px; }
+  .wavebox i { display: block; width: 16px; border-radius: 8px; background: linear-gradient(var(--lime), var(--vi2)); }
+  .dev { position: absolute; font-size: 150px; transform: translate(-50%,-50%); }
+  .pkt { position: absolute; width: 42px; height: 42px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 40px var(--lime); transform: translate(-50%,-50%); }
+  .corner { position: absolute; width: 90px; height: 90px; border: 0 solid var(--lime); }
+  .ripple { position: absolute; width: 120px; height: 120px; border-radius: 50%; border: 8px solid var(--pink); transform: translate(-50%,-50%); z-index: 7; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="58.4" data-width="1080" data-height="1920">
+<div id="stage"></div>
+<div id="caps"></div>
+<div id="vig"></div>
+<div id="scan"></div>
+<div id="grain"></div>
+<div id="flash"></div>
+<audio id="mix" src="assets/mix.wav" data-start="0" data-duration="58.4" data-track-index="10" data-volume="1"></audio>
+</div>
+<script src="vendor/remotion-captions.js"></script>
+<script src="vendor/remotion-noise.js"></script>
+<script src="vendor/remotion-layout-utils.js"></script>
+<script src="assets/captions.js"></script>
+<script>
+const B = 0.4, BAR = 1.6, FPS = 30;
+const DROPS = [[16.0, 28.8], [36.8, 52.8]];
+const HALF = [28.8, 36.8];
+const stage = document.getElementById("stage");
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
+const easeIO = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+// spring(): 0 -> 1 with overshoot, closed form of a damped spring (stiffness k, damping c, mass 1)
+const spring = (t, k = 520, c = 22) => {
+  if (t <= 0) return 0;
+  const w0 = Math.sqrt(k), z = c / (2 * w0), wd = w0 * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w0 * t) * (Math.cos(wd * t) + (z * w0 / wd) * Math.sin(wd * t));
+};
+const back = x => { x = clamp(x); const c = 2.2; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+const seg = new Intl.Segmenter("hi", {granularity: "grapheme"});
+const graphemes = s => Array.from(seg.segment(s), x => x.segment);
+let PENDING = [];
+
+const S = [];
+function scene(start, end, html, update) {
+  const el = document.createElement("div");
+  el.className = "scene";
+  el.innerHTML = html;
+  stage.appendChild(el);
+  const q = sel => el.querySelector(sel), qa = sel => [...el.querySelectorAll(sel)];
+  S.push({start, end, el, update: lt => update(lt, q, qa)});
+}
+
+// ---- element animators (pure functions of time) ----
+function tf(el, {x = 0, y = 0, s = 1, r = 0, o = 1, blur = 0, center = true}) {
+  el.style.opacity = o;
+  el.style.transform = `${center ? "translate(-50%,-50%) " : ""}translate(${x}px,${y}px) scale(${s}) rotate(${r}deg)`;
+  el.style.filter = blur > .3 ? `blur(${blur}px)` : "none";
+}
+function slam(el, lt, at, o = {}) {
+  const {from = 1.9, dur = .16, out = null, outDur = .14, r = 0, center = true, x = 0, y = 0} = o;
+  const p = (lt - at) / dur;
+  if (p < 0) { el.style.opacity = 0; return; }
+  let op = clamp(p * 2.5), s = lerp(from, 1, spring(lt - at)), blur = (1 - clamp(p)) * 12;
+  if (out != null && lt > out) { const k = clamp((lt - out) / outDur); op *= 1 - k; s *= 1 + .25 * k; blur += k * 10; }
+  tf(el, {s, o: op, blur, r, center, x, y});
+}
+function rise(el, lt, at, o = {}) {
+  const {dur = .3, dy = 80, out = null, outDur = .2, center = true, x = 0, s = 1} = o;
+  const p = easeOut((lt - at) / dur);
+  let op = clamp((lt - at) / dur * 1.5);
+  if (lt < at) op = 0;
+  if (out != null && lt > out) op *= 1 - clamp((lt - out) / outDur);
+  tf(el, {y: (1 - p) * dy, o: op, center, x, s});
+}
+function type(el, text, lt, at, dur) {
+  const g = graphemes(text);
+  el.textContent = g.slice(0, Math.round(clamp((lt - at) / dur) * g.length)).join("");
+  el.style.display = lt >= at ? "block" : "none";
+}
+function words(els, lt, at, step) { els.forEach((e, i) => slam(e, lt, at + i * step, {from: 1.5, dur: .12, center: false})); }
+const W = s => s.split(" ").map(w => `<span style="display:inline-block;margin:0 12px">${w}</span>`).join("");
+// image sequences: footage pulled from the real phone recordings, one JPG per frame
+function seqSet() {}
+function srcSet(img, src) { reelkit.stackSet(img, src); }
+
+// ---- reusable markup ----
+const SB = '<div class="sb"><span>9:41</span><span>▂▄▆█ 5G ▮</span></div>';
+const phone = (inner, top = "50%", cls = "") => `<div class="phone ${cls}" style="top:${top}"><div class="notch"></div>${inner}</div>`;
+const LOGO = (w = 200) => `<svg width="${w}" height="${w}" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#5a45c9"/><path d="M27 37l10-10M24 31l-3 3a6 6 0 0 0 8.5 8.5l3-3M40 33l3-3a6 6 0 0 0-8.5-8.5l-3 3" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="square"/></svg>`;
+const ICON = `<svg class="ic" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#171335"/><path d="M27 37l10-10M24 31l-3 3a6 6 0 0 0 8.5 8.5l3-3M40 33l3-3a6 6 0 0 0-8.5-8.5l-3 3" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="square"/></svg>`;
+// top-down car
+const CAR = (body, w = 230, h = 420) => `<svg width="${w}" height="${h}" viewBox="0 0 230 420">
+  <rect x="8" y="8" width="214" height="404" rx="70" fill="${body}"/>
+  <rect x="32" y="92" width="166" height="80" rx="22" fill="#0b0a18" opacity=".85"/>
+  <rect x="36" y="290" width="158" height="58" rx="18" fill="#0b0a18" opacity=".8"/>
+  <rect x="40" y="180" width="150" height="104" rx="16" fill="#fff" opacity=".1"/>
+  <rect x="24" y="18" width="46" height="16" rx="8" fill="#fff6c0"/><rect x="160" y="18" width="46" height="16" rx="8" fill="#fff6c0"/>
+  <rect x="24" y="388" width="46" height="12" rx="6" fill="#ff3b5c"/><rect x="160" y="388" width="46" height="12" rx="6" fill="#ff3b5c"/></svg>`;
+
+// ==================================================================== COLD OPEN 0 – 4.8
+scene(0, 4.8, `
+  <div class="lot" data-layout-ignore></div>
+  <div class="c mine" style="top:1040px">${CAR("#5a45c9")}</div>
+  <div class="c c2" style="top:870px;left:180px">${CAR("#9a98a8")}</div>
+  <div class="c c3" style="top:870px;left:900px">${CAR("#c25b3c")}</div>
+  <div class="c blk" style="top:1420px">${CAR("#e8e6ef", 230, 420)}</div>
+  <div class="c you" style="top:1040px;font-weight:900;font-size:40px;color:#fff;background:#000;padding:6px 18px;border-radius:12px">YOUR CAR</div>
+  <div data-layout-allow-occlusion class="honk h0" style="left:540px;top:1700px">HONK</div><div data-layout-allow-occlusion class="honk h1" style="left:260px;top:1560px">HONK</div>
+  <div data-layout-allow-occlusion class="honk h2" style="left:820px;top:1580px">HONK!!</div><div data-layout-allow-occlusion class="honk h3" style="left:540px;top:1260px">HONKKK</div>
+  <div class="c" style="top:190px"><span class="tag">POV</span></div>
+  <div class="c mid pov stroke" style="top:330px;white-space:normal;width:960px">${W("you're late and someone parked you in 💀")}</div>
+`,
+  (lt, q, qa) => {
+    words(qa(".pov span"), lt, .1, .09);
+    tf(q(".tag"), {o: lt > .05 ? 1 : 0, center: false});
+    const k = easeOut(lt / .35);
+    tf(q(".blk"), {x: (1 - k) * 1100, r: 90, s: 1});
+    tf(q(".mine"), {o: 1}); tf(q(".c2"), {o: 1}); tf(q(".c3"), {o: 1});
+    tf(q(".you"), {o: clamp((lt - .4) * 4)});
+    [[.15, .55], [.85, .17], [1.02, .17], [1.19, .35]].forEach(([at, d], i) => {
+      const on = lt >= at && lt < at + d + .25, p = clamp((lt - at) / .12);
+      tf(q(".h" + i), {s: lerp(1.8, 1, back(p)) * (1 + .05 * Math.sin(lt * 60)), o: on ? 1 : 0, r: (i % 2 ? -8 : 8)});
+    });
+    const z = lerp(1, 1.12, easeIO((lt - 3.6) / 1.2));
+    q(".lot").style.transform = `scale(${z})`;
+    document.getElementById("vig").style.opacity = lt > 1.6 ? .35 + .3 * Math.sin(lt * 8) : 0;
+  });
+
+// ==================================================================== BUILD 4.8 – 16.0
+scene(4.8, 6.4, `
+  <div class="c tag t0" style="top:300px">PLAN A</div>
+  <div class="c big t" style="top:520px;font-size:150px">HONK FOR<br><span class="hl pink">20 MINUTES</span></div>
+  <div class="c" style="top:1130px;font-size:380px">📢</div>
+  <div class="c big n" style="top:1520px;font-size:130px;color:var(--lime)">HONK ×1</div>
+  <div class="c small u" style="top:1680px">owner: still in the movie 🍿</div>`,
+  (lt, q) => {
+    slam(q(".t0"), lt, 0); slam(q(".t"), lt, .05);
+    const hk = Math.min(4, Math.floor(lt / B) + 1);
+    q(".n").textContent = "HONK ×" + [1, 4, 19, 47][hk - 1];
+    tf(q(".n"), {s: 1 + .25 * Math.exp(-((lt % B) / .08))});
+    rise(q(".u"), lt, .8);
+  });
+
+scene(6.4, 8.0, `
+  <div class="c tag t0" style="top:300px">PLAN B</div>
+  <div class="c big t" style="top:500px;font-size:140px">NOTE UNDER<br><span class="hl">THE WIPER</span> 📝</div>
+  <div class="note">Plz move ur car, I'm blocked in!! — Flat 4B 🙏</div>
+  <div class="c big rain" style="top:1560px;font-size:110px">(it rained) 🌧️</div>`,
+  (lt, q) => {
+    slam(q(".t0"), lt, 0); slam(q(".t"), lt, .05);
+    rise(q(".note"), lt, .15, {dy: 260});
+    const wet = clamp((lt - .8) / .4);
+    q(".note").style.filter = `blur(${wet * 7}px)`;
+    q(".note").style.transform = `translate(-50%,-50%) rotate(${-5 + wet * 3}deg) translateY(${(1 - easeOut((lt - .15) / .3)) * 260 + wet * 30}px)`;
+    q(".note").style.opacity = clamp((lt - .15) * 5);
+    slam(q(".rain"), lt, .8, {from: 1.6});
+  });
+
+scene(8.0, 9.6, `
+  <div class="c tag t0" style="top:300px">PLAN C</div>
+  <div class="c big t" style="top:480px;font-size:150px">ASK THE<br><span class="hl">GUARD</span></div>
+  <div class="c" style="top:1080px;font-size:420px">💂</div>
+`,
+  (lt, q) => {
+    slam(q(".t0"), lt, 0); slam(q(".t"), lt, .05);
+  });
+
+scene(9.6, 11.2, `
+  <div class="c tag t0" style="top:300px">PLAN D</div>
+  <div class="c big t" style="top:490px;font-size:130px">YOUR NUMBER ON<br><span class="hl pink">THE DASHBOARD</span> 🤡</div>
+  <div class="dash"><div class="paper">📞 98XXX XX420</div></div>`,
+  (lt, q) => {
+    slam(q(".t0"), lt, 0); slam(q(".t"), lt, .05);
+    rise(q(".dash"), lt, .2, {dy: 300});
+  });
+
+const SPAM = [["Unknown", "“sir loan approved 💸”"], ["Unknown", "“is this the swift guy??”"], ["Unknown", "“hi dear 😘”"], ["Unknown", "“bhai car bechoge?”"], ["Unknown", "“KYC update pending”"]];
+scene(11.2, 12.8, `
+  <div class="c big t" style="top:330px;font-size:120px;white-space:normal;width:1000px">NOW EVERY STRANGER HAS IT <span class="hl pink">FOREVER</span> 💀</div>
+  ${SPAM.map((s, i) => `<div class="spam s${i}" style="top:${720 + i * 170}px">📞 <b>${s[0]}</b> · ${s[1]}</div>`).join("")}
+  <div class="c small f" style="top:1720px;font-size:60px">⏸ freeze</div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0, {from: 2.6});
+    SPAM.forEach((_, i) => { const at = .1 + i * .17, k = easeOut((lt - at) / .15), el = q(".s" + i);
+      el.style.opacity = lt > at ? 1 : 0; el.style.transform = `translate(calc(-50% + ${(1 - k) * (i % 2 ? -1100 : 1100)}px),0) rotate(${(hash(i) - .5) * 6}deg)`; });
+    const frozen = lt < .9;
+    stage.style.filter = frozen ? "grayscale(1) contrast(1.3)" : "none";
+    q(".f").style.opacity = frozen ? 1 : 0;
+  });
+
+scene(12.8, 14.4, `
+  <div class="c big a" style="top:46%;white-space:normal;width:1000px;font-size:150px">BRO WHY CAN'T I JUST… <span class="hl">TEXT THE CAR?</span> 😭</div>`,
+  (lt, q) => { rise(q(".a"), lt, 0); const p = easeIO(lt / 1.6); q(".a").style.transform += ` scale(${lerp(1, 1.12, p)})`; });
+
+scene(14.4, 15.6, `<div class="c big t" style="top:50%;font-size:170px">YOU COULDN'T.</div>`,
+  (lt, q) => { slam(q(".t"), lt, 0); const p = easeIO(lt / 1.2); q(".t").style.transform += ` scale(${lerp(1, 1.4, p)})`; });
+
+scene(15.6, 16.0, `<div class="c t" style="top:50%;font-size:70px;font-style:italic;font-weight:500">until now…</div>`,
+  (lt, q) => tf(q(".t"), {o: clamp(lt * 8)}));
+
+// ==================================================================== DROP 1 16.0 – 28.8
+scene(16.0, 19.2, `
+  <div class="c glow" style="top:42%;width:1500px;height:1500px;border-radius:50%;background:radial-gradient(circle, rgba(90,69,201,.65), transparent 60%)"></div>
+  <div class="c shock" style="top:36%;width:420px;height:420px;border-radius:50%;border:14px solid var(--lime)"></div>
+  <div class="c logo" style="top:36%">${LOGO(300)}</div>
+  <div class="c big brandf name" style="top:55%;font-size:230px">Connect</div>
+  <div class="c mid s1" style="top:66%">every car gets a</div>
+  <div class="c big s2" style="top:75%;font-size:190px"><span class="hl lime">VOICE</span> 📣</div>`,
+  (lt, q) => {
+    slam(q(".logo"), lt, 0, {from: .2, dur: .25}); slam(q(".name"), lt, .05, {from: 3});
+    const sp = clamp(lt / .6); tf(q(".shock"), {s: lerp(.3, 4, easeOut(sp)), o: 1 - sp});
+    tf(q(".glow"), {s: 1 + .08 * Math.exp(-((lt % B) / .1))});
+    q(".logo").style.transform += ` rotate(${Math.sin(lt * 3) * 4}deg)`;
+    rise(q(".s1"), lt, 1.2); slam(q(".s2"), lt, 1.6, {r: -2});
+  });
+
+scene(19.2, 20.8, `
+  ${phone('<img src="assets/tag-ready.jpg">', "1180px", "ph")}
+  <div class="c beam" style="top:1180px;width:700px;height:14px;background:var(--lime);box-shadow:0 0 60px var(--lime);border-radius:8px"></div>
+  <div class="c big t" style="top:170px;font-size:120px">QR ON THE <span class="hl">WINDSHIELD</span></div>
+  <div class="c big t2" style="top:300px;font-size:100px">ANYONE SCANS IT 📸</div>
+  <div class="chip k0" style="top:1720px;left:30%">❌ no app</div><div class="chip k1" style="top:1720px;left:70%">❌ no login</div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0);
+    slam(q(".t2"), lt, .4);
+    const p = easeOut(lt / .35); tf(q(".ph"), {y: (1 - p) * 900, s: .86});
+    const b = clamp((lt - .5) / .9); tf(q(".beam"), {y: lerp(-380, 140, easeIO(b)), o: lt > .5 && lt < 1.45 ? 1 : 0});
+    slam(q(".k0"), lt, .8, {from: 1.5}); slam(q(".k1"), lt, 1.2, {from: 1.5});
+  });
+
+scene(20.8, 22.4, `
+  ${phone(''+SB+'<img class="scr web" src="assets/scan-en.png">', "1150px", "ph")}
+  <div class="ripple rp"></div>
+  <div class="c big t" style="top:170px;font-size:130px">PICK THE <span class="hl">PROBLEM</span> 👆</div>
+  <div class="c small u" style="top:300px">this is the stranger's side · just a web page</div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0); rise(q(".u"), lt, .3);
+    tf(q(".ph"), {s: .86});
+    const tapAt = .8, tapped = lt >= tapAt;
+    srcSet(q(".scr"), tapped ? "assets/scan-picked.png" : "assets/scan-en.png");
+    const rp = clamp((lt - (tapAt - .15)) / .4);
+    q(".rp").style.left = "330px"; q(".rp").style.top = "1000px";
+    tf(q(".rp"), {s: lerp(.3, 2.2, easeOut(rp)), o: lt > tapAt - .15 && rp < 1 ? 1 - rp : 0});
+  });
+
+scene(22.4, 24.0, `
+  ${phone(''+SB+'<img class="scr web" src="assets/scan-plate1.png">', "1150px", "ph")}
+  <div class="c big t" style="top:150px;font-size:110px">TYPE THE PLATE'S <span class="hl lime">LAST 4</span></div>
+  <div class="c mid u stroke" style="top:290px;font-size:56px">proves you're actually at the car 🔐</div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0); rise(q(".u"), lt, .2);
+    const k = clamp(Math.floor(lt / B) + 1, 1, 4);
+    srcSet(q(".scr"), `assets/scan-plate${k}.png`);
+    const zp = easeIO(lt / .5);
+    tf(q(".ph"), {s: lerp(.86, 1.12, zp) * (1 + .03 * Math.exp(-((lt % B) / .07))), y: lerp(0, 60, zp)});
+  });
+
+scene(24.0, 25.6, `
+  ${phone('<img src="assets/home.jpg">', "1200px", "ph")}
+  <div class="notif n0" style="top:380px">${ICON}<b>Connect · now</b>🚗 Someone is at your Swift: <b style="display:inline;color:#bd2049;font-size:38px">Blocking a car</b></div>
+  <div class="c big t" style="top:170px;font-size:120px">OWNER GETS <span class="hl pink">PINGED</span> ⚡</div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0);
+    tf(q(".ph"), {s: .86, o: 1});
+    const k = easeOut(lt / .25); const el = q(".n0");
+    el.style.opacity = 1; el.style.transform = `translate(-50%, ${(1 - k) * -500}px) scale(${1 + .04 * Math.exp(-lt / .1)})`;
+  });
+
+scene(25.6, 27.2, `
+  ${phone(''+SB+'<img class="scr web" src="assets/thread-seen.png">', "1180px", "ph")}
+  <div class="c big t" style="top:170px;font-size:120px">REPLY IN <span class="hl lime">SECONDS</span> 🏃</div>
+  <div class="chip k" style="top:1760px">💬 owner: “Coming in 2 minutes”</div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0);
+    const zr = easeIO((lt - .3) / .6); tf(q(".ph"), {s: lerp(.86, 1.05, zr), y: lerp(0, 330, zr)});
+    srcSet(q(".scr"), lt > .4 ? "assets/thread-reply.png" : "assets/thread-seen.png");
+    slam(q(".k"), lt, .45, {from: 1.6});
+  });
+
+scene(27.2, 28.8, `
+  <div class="c num" style="top:34%;font-family:Anton;font-size:120px;color:#888">+91 98XXX XX420</div>
+  <div class="c big zero lime" style="top:44%;font-size:560px">0</div>
+  <div class="c mid u" style="top:63%;white-space:normal;width:960px">phone numbers shared. on either side. 🤫</div>`,
+  (lt, q) => {
+    tf(q(".num"), {o: lt < .25 ? 1 : 0, x: (hash(Math.floor(lt * 40)) - .5) * 40});
+    q(".num").style.textDecoration = lt > .1 ? "line-through" : "none";
+    slam(q(".zero"), lt, .25, {from: 3}); rise(q(".u"), lt, .5);
+  });
+
+// ==================================================================== HALF 28.8 – 36.8 (no signal → sound)
+scene(28.8, 30.4, `
+  <div class="c tag t0" style="top:330px">PLOT TWIST</div>
+  <div class="c big t" style="top:520px;font-size:150px">BASEMENT<br>PARKING 🅿️</div>
+  <div class="c bars" style="top:1080px"><i style="height:75px"></i><i style="height:150px"></i><i style="height:225px"></i><i style="height:300px"></i></div>
+  <div class="c big z pink" style="top:1420px;font-size:170px">0 BARS 📵</div>`,
+  (lt, q, qa) => {
+    stage.style.background = "radial-gradient(circle at 50% 40%, #1a1638, #050410 70%)";
+    slam(q(".t0"), lt, 0); slam(q(".t"), lt, .05);
+    const gone = [.15, .45, .75, 1.05].filter(a => lt >= a).length;
+    qa(".bars i").forEach((b, i) => b.style.background = i >= 4 - gone ? "#2c2846" : "var(--ink)");
+    slam(q(".z"), lt, 1.1, {from: 2});
+  });
+
+const WAVEN = 40;
+scene(30.4, 32.0, `
+  <div class="c big t" style="top:330px;font-size:130px">SO CONNECT<br>TALKS IN <span class="hl lime">SOUND</span> 🔊</div>
+  <div class="c wavebox" style="top:1000px">${"<i></i>".repeat(WAVEN)}</div>
+  <div class="c dev d0" style="top:1500px;left:250px">📱</div><div class="c dev d1" style="top:1500px;left:830px">📱</div>
+  <div class="c small u" style="top:1700px">plate + problem, in ~2 seconds of sound</div>`,
+  (lt, q, qa) => {
+    stage.style.background = "radial-gradient(circle at 50% 50%, #1d1846, #050410 70%)";
+    slam(q(".t"), lt, 0); rise(q(".u"), lt, .4);
+    const bursts = [.1, .6, 1.1];
+    const on = bursts.some(a => lt >= a && lt < a + .3);
+    qa(".wavebox i").forEach((b, i) => {
+      const h = on ? 30 + 330 * Math.abs(Math.sin(i * 1.7 + Math.floor(lt * 40) * 2.3) * Math.sin(i * .31 + lt * 5)) : 14;
+      b.style.height = h + "px";
+    });
+    tf(q(".d0"), {s: on ? 1.08 : 1, o: 1}); tf(q(".d1"), {s: 1, o: 1});
+  });
+
+scene(32.0, 33.6, `
+  <div class="c big t" style="top:300px;font-size:120px;white-space:normal;width:1000px">AT PITCHES YOU <span class="hl pink">CAN'T EVEN HEAR</span> 🦇</div>
+  <svg class="c spec" style="top:950px" width="960" height="460" viewBox="0 0 960 460">
+    <rect x="0" y="0" width="960" height="400" rx="20" fill="#120f2a"/>
+    <rect class="band" x="768" y="0" width="140" height="400" fill="#c8ff3d" opacity=".25"/>
+    <g class="sp"></g>
+    <text x="40" y="450" fill="#8a85b0" font-family="Inter" font-weight="800" font-size="30">0 kHz</text>
+    <text x="440" y="450" fill="#8a85b0" font-family="Inter" font-weight="800" font-size="30">humans 👂</text>
+    <text x="760" y="450" fill="#c8ff3d" font-family="Inter" font-weight="800" font-size="30">18–19.7 kHz</text>
+  </svg>
+  <div class="c mid u" style="top:1500px;white-space:normal;width:960px;font-size:56px">measured on a real iQOO 15 speaker → mic ✅</div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0); rise(q(".u"), lt, 1.2);
+    tf(q(".spec"), {o: 1, s: 1 + (lt > 1.2 ? .05 * Math.exp(-(lt - 1.2) / .15) : 0)});
+    let bars = "";
+    for (let i = 0; i < 48; i++) {
+      const x = 20 + i * 19, inBand = x > 768 && x < 908;
+      const h = inBand ? 120 + 240 * Math.abs(Math.sin(lt * 14 + i)) : 20 + 30 * hash(i + Math.floor(lt * 20));
+      bars += `<rect x="${x}" y="${400 - h}" width="13" height="${h}" rx="4" fill="${inBand ? "#c8ff3d" : "#4a4475"}"/>`;
+    }
+    q(".sp").innerHTML = bars;
+  });
+
+const RELAY = [[230, 820, "📱", "you · 0 bars 📵"], [540, 1160, "📱", "stranger walks out 🚶"], [850, 820, "☁️", "back online"], [850, 1500, "📱", "owner 🔔"]];
+scene(33.6, 35.2, `
+  <div class="c big t" style="top:290px;font-size:110px;white-space:normal;width:1000px">ANY CONNECT PHONE NEARBY <span class="hl lime">CARRIES IT OUT</span> 📦</div>
+  <svg style="position:absolute;left:0;top:0" width="1080" height="1920"><polyline class="route" points="${RELAY.map(r => r[0] + "," + r[1]).join(" ")}" fill="none" stroke="#8b7bff" stroke-width="10" stroke-dasharray="26 22" stroke-linecap="round"/></svg>
+  ${RELAY.map((r, i) => `<div class="c node n${i}" style="left:${r[0]}px;top:${r[1]}px;width:230px;height:230px;border-radius:50%;background:#1d1846;border:6px solid #3a3470;display:grid;place-items:center;font-size:120px">${r[2]}</div>
+  <div class="c small l${i}" style="left:${r[0]}px;top:${r[1] + 160}px;font-size:36px;font-weight:900">${r[3]}</div>`).join("")}
+  <div class="pkt p" style="width:60px;height:60px"></div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0);
+    q(".route").setAttribute("stroke-dashoffset", -lt * 120);
+    const u = clamp((lt - .15) / 1.25) * 3, sg = Math.min(2, Math.floor(u)), f = easeIO(u - sg);
+    const [x0, y0] = RELAY[sg], [x1, y1] = RELAY[sg + 1];
+    const p = q(".p"); p.style.left = lerp(x0, x1, f) + "px"; p.style.top = lerp(y0, y1, f) + "px"; p.style.opacity = lt > .15 ? 1 : 0;
+    RELAY.forEach((_, i) => {
+      const at = .15 + i * 1.25 / 3, hit = lt >= at;
+      tf(q(".n" + i), {s: hit ? 1 + .18 * Math.exp(-(lt - at) / .12) : .9, o: 1});
+      q(".n" + i).style.borderColor = hit ? "var(--lime)" : "#3a3470";
+      tf(q(".l" + i), {o: hit ? 1 : .45});
+    });
+  });
+
+scene(35.2, 36.8, `
+  ${phone('<img src="assets/home.jpg">', "1200px", "ph")}
+  <div class="notif n0" style="top:380px">${ICON}<b>Connect · now</b>🔊 <b style="display:inline;color:#5a45c9;font-size:38px">Carried here by sound</b> · Blocking a car</div>
+  <div class="c big t" style="top:170px;font-size:130px">AND IT <span class="hl lime">STILL ARRIVES</span></div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0);
+    tf(q(".ph"), {s: .86, o: 1});
+    const k = easeOut(lt / .25); const el = q(".n0");
+    el.style.opacity = 1; el.style.transform = `translate(-50%, ${(1 - k) * -500}px)`;
+    const z = easeIO((lt - .8) / .8); stage.style.transform = `scale(${1 + z * .08})`;
+  });
+
+// ==================================================================== DROP 2 36.8 – 52.8 (the AI flex)
+scene(36.8, 38.4, `
+  <div class="c big t" style="top:36%;font-size:190px">NO STICKER? 🤨</div>
+  <div class="c big t2" style="top:56%;font-size:150px">THE <span class="hl lime">PLATE</span> IS<br>THE QR 🔥</div>`,
+  (lt, q) => { slam(q(".t"), lt, 0, {out: .75}); slam(q(".t2"), lt, .8, {from: 2.6}); });
+
+scene(38.4, 41.6, `
+  ${phone('<img src="assets/ph-live.png">', "1180px", "ph dark")}
+  <div class="c big t" style="top:150px;font-size:120px">READS PLATES <span class="hl">ON THE PHONE</span></div>
+  <div class="c mid u" style="top:285px;font-size:56px">🧠 our own model · no cloud · no upload</div>
+  <div class="corner k0"></div><div class="corner k1"></div><div class="corner k2"></div><div class="corner k3"></div>
+  <div class="c big ms" style="top:1720px;font-size:150px;color:var(--lime)">0 ms</div>`,
+  (lt, q, qa) => {
+    slam(q(".t"), lt, 0); rise(q(".u"), lt, .3);
+    tf(q(".ph"), {s: .86, o: 1});
+    // lock-on corners around the plate in the live view
+    const cx = 610, cy = 1080, w0 = 420, w1 = 170, h1 = 120;
+    const p = easeOut((lt - .3) / .5), w = lerp(w0, w1, p), h = lerp(w0, h1, p);
+    const pulse = 1 + .05 * Math.sin(lt * 18) * (p >= 1 ? 1 : 0);
+    [[-1, -1, "top", "left"], [1, -1, "top", "right"], [-1, 1, "bottom", "left"], [1, 1, "bottom", "right"]].forEach(([sx, sy, v, hz], i) => {
+      const el = q(".k" + i);
+      el.style.left = (cx + sx * w / 2 * pulse - 45) + "px"; el.style.top = (cy + sy * h / 2 * pulse - 45) + "px";
+      el.style.borderWidth = "0"; el.style[`border${v[0].toUpperCase() + v.slice(1)}Width`] = "12px"; el.style[`border${hz[0].toUpperCase() + hz.slice(1)}Width`] = "12px";
+      el.style.transform = `translate(${-sx * 22}px,${-sy * 22}px)`;
+      el.style.opacity = lt > .3 ? 1 : 0;
+    });
+    const ms = Math.round(103 * easeOut((lt - .4) / .6));
+    q(".ms").textContent = lt > .4 ? `${ms} ms ⚡` : "";
+    slam(q(".ms"), lt, .4, {from: 1.4});
+  });
+
+scene(41.6, 44.8, `
+  ${phone('<video class="seq" id="v-plate" src="assets/f_plate.mp4" muted playsinline data-start="41.6" data-duration="3.2" data-media-start="0.2"></video>', "1180px", "ph")}
+  <div class="real" style="top:300px;right:120px">REAL iQOO · REAL FOOTAGE</div>
+  <div class="c big t" style="top:150px;font-size:120px">SNAP YOUR CAR →<br><span class="hl lime">IT FILLS ITSELF</span> ✨</div>
+  <div class="chip k" style="top:1740px">🔍 KL02BM4659 · read in-app</div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0, {out: 2.3}); slam(q(".real"), lt, .3, {center: false, r: 4, from: 1.6, out: 2.3});
+    seqSet(q(".seq"), "f_plate", 105, lt * 1.0, 6);
+    const z = easeIO((lt - 2.3) / .6);
+    tf(q(".ph"), {s: lerp(.86, 1.0, z), y: lerp(0, -200, z)});
+    slam(q(".k"), lt, 2.5, {from: 1.5});
+  });
+
+scene(44.8, 48.0, `
+  ${phone('<video class="seq" id="v-road" src="assets/f_road.mp4" muted playsinline data-start="44.8" data-duration="3.2"></video>', "1180px", "ph dark")}
+  <div style="position:absolute;left:0;right:0;top:0;height:460px;background:linear-gradient(#0d0b22 55%,transparent)"></div>
+  <div class="c big t" style="top:150px;font-size:120px">DASHCAM MODE <span class="hl pink">SEES IT</span> 👀</div>
+  <div class="chip k0" style="top:1480px;left:32%;border-color:var(--pink)">🪖❌ no helmet</div>
+  <div class="chip k1" style="top:1620px;left:64%;border-color:var(--pink)">🛵 triple riding</div>
+  <div class="real" style="top:300px;right:120px">REAL iQOO</div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0); slam(q(".real"), lt, .3, {center: false, r: 4, from: 1.6});
+    seqSet(q(".seq"), "f_road", 96, lt);
+    const z = easeIO((lt - .3) / .7);
+    tf(q(".ph"), {s: lerp(.86, 1.95, z), y: lerp(0, -520, z)});
+    slam(q(".k0"), lt, 1.6, {from: 1.6, r: -3}); slam(q(".k1"), lt, 2.0, {from: 1.6, r: 3});
+  });
+
+const LANGS = [["en", "ENGLISH"], ["hi", "हिन्दी"], ["kn", "ಕನ್ನಡ"], ["ta", "தமிழ்"]];
+scene(48.0, 49.6, `
+  ${phone(''+SB+'<img class="scr web" src="assets/scan-en.png">', "1220px", "ph")}
+  <div class="c big t" style="top:150px;font-size:120px">SPEAKS <span class="hl lime">YOUR</span> LANGUAGE 🗣️</div>
+  <div class="c big w" style="top:320px;font-size:130px;text-transform:none"></div>`,
+  (lt, q) => {
+    slam(q(".t"), lt, 0);
+    const i = clamp(Math.floor(lt / B), 0, 3);
+    srcSet(q(".scr"), `assets/scan-${LANGS[i][0]}.png`);
+    q(".w").textContent = LANGS[i][1];
+    tf(q(".w"), {s: 1 + .3 * Math.exp(-((lt % B) / .07)), o: 1});
+    tf(q(".ph"), {s: .86, r: (i % 2 ? 1.5 : -1.5)});
+  });
+
+const FEATS = [["🚨", "CRASH SOS"], ["👪", "FAMILY SHARING"], ["📍", "WHERE'D I PARK"], ["📴", "WORKS OFFLINE"]];
+scene(49.6, 51.2, `
+  <div class="c em" style="top:38%;font-size:360px"></div>
+  <div class="c big f" style="top:62%;font-size:150px"></div>
+  <div class="c small u" style="top:78%">+ renewals · documents · fuel log · society mode</div>`,
+  (lt, q) => {
+    const i = clamp(Math.floor(lt / B), 0, 3), ph = lt - i * B;
+    q(".em").textContent = FEATS[i][0]; q(".f").textContent = FEATS[i][1];
+    slam(q(".em"), ph, 0, {from: 2.2, r: (i % 2 ? 8 : -8)}); slam(q(".f"), ph, .03, {from: 1.6});
+    stage.style.background = ["#0d0b22", "#1a1240", "#0d0b22", "#1a1240"][i];
+    rise(q(".u"), lt, .2);
+  });
+
+scene(51.2, 52.8, `
+  <div class="c big s0 lime" style="top:30%;font-size:200px">3 AI MODELS</div>
+  <div class="c mid s0b" style="top:39%">we trained ourselves 🏋️</div>
+  <div class="c big s1" style="top:53%;font-size:170px"><span class="hl">100% ON-DEVICE</span></div>
+  <div class="c big s2 pink" style="top:71%;font-size:170px">FREE. NO SIGN-UP.</div>`,
+  (lt, q) => {
+    slam(q(".s0"), lt, 0, {from: 2.4}); rise(q(".s0b"), lt, .15);
+    slam(q(".s1"), lt, .53, {from: 2.4, r: -2}); slam(q(".s2"), lt, 1.07, {from: 2.4});
+  });
+
+// ==================================================================== OUTRO 52.8 – 58.4
+scene(52.8, 58.4, `
+  <div class="c mid a stroke" style="top:45%">your car can't talk.</div>
+  <div class="c logo" style="top:30%">${LOGO(240)}</div>
+  <div class="c big brandf name" style="top:45%;font-size:220px">Connect</div>
+  <div class="c mid b" style="top:54%">gives it a voice. 📣</div>
+  <div class="c big c2" style="top:64%;font-size:110px"><span class="hl lime">EVERY CAR GETS A VOICE</span></div>
+  <div class="c small u" style="top:79%;font-size:40px">github.com/nikhilcherry/connect</div>
+  <div class="c small u2" style="top:83%;font-size:34px;opacity:.6">built for iQOO · mobility track 🏁</div>`,
+  (lt, q) => {
+    stage.style.background = "radial-gradient(circle at 50% 40%, #2a1f6b, #0d0b22 70%)";
+    rise(q(".a"), lt, .1, {out: 1.45});
+    slam(q(".logo"), lt, 1.6, {from: .2, dur: .25}); slam(q(".name"), lt, 1.62, {from: 3});
+    rise(q(".b"), lt, 2.0); slam(q(".c2"), lt, 2.4, {r: -2}); rise(q(".u"), lt, 3.0); rise(q(".u2"), lt, 3.2);
+    const fade = clamp((lt - 5.0) / .55); stage.style.opacity = 1 - fade;
+  });
+
+// ==================================================================== global FX
+function inWin(t, [a, b]) { return t >= a && t < b; }
+// TikTok-style captions: @remotion/captions groups Whisper word timings into pages; we draw the
+// page that is live, lime-box the word being spoken and dim the ones still to come.
+// page each voice line on its own, so one line's last word never runs into the next line
+const CAP_PAGES = !window.CAPTIONS ? [] : CAPTIONS.zones.flatMap(z => RemotionCaptions.createTikTokStyleCaptions({
+  captions: CAPTIONS.captions.filter(c => c.startMs >= z.startMs && c.startMs < z.endMs),
+  combineTokensWithinMilliseconds: 1400 }).pages);
+const capsEl = document.getElementById("caps");
+function renderCaps(t) {
+  const ms = t * 1000;
+  const zone = window.CAPTIONS && CAPTIONS.zones.find(z => ms >= z.startMs && ms < z.endMs);
+  const page = zone && CAP_PAGES.filter(p => p.startMs <= ms && p.startMs >= zone.startMs - 1).pop();
+  if (!page) { capsEl.style.display = "none"; return; }
+  capsEl.style.display = "block";
+  capsEl.style.top = (zone.y ?? 1500) + "px";
+  const pop = spring((ms - page.startMs) / 1000, 380, 20);
+  capsEl.style.transform = `translateY(-50%) scale(${.55 + .45 * pop})`;
+  capsEl.style.opacity = clamp((ms - page.startMs) / 60) * (1 - clamp((ms - (zone.endMs - 150)) / 150));
+  capsEl.innerHTML = page.tokens.map(k => {
+    const on = ms >= k.fromMs && (ms < k.toMs || k === page.tokens[page.tokens.length - 1]);
+    const cls = on ? "on" : ms < k.fromMs ? "next" : "";
+    const bump = on ? 1 + .14 * (1 - spring((ms - k.fromMs) / 1000, 600, 26)) : 1;
+    return `<span class="${cls}" style="transform:scale(${bump.toFixed(3)})">${k.text.trim()}</span>`;
+  }).join("");
+}
+
+function seek(t) {
+  PENDING = [];
+  renderCaps(t);
+  stage.style.filter = "none"; stage.style.background = ""; stage.style.opacity = 1; stage.style.transform = "";
+  document.getElementById("vig").style.opacity = 0;
+  for (const s of S) {
+    const on = t >= s.start && t < s.end;
+    s.el.style.display = on ? "block" : "none";
+    if (on) s.update(t - s.start);
+  }
+  let amp = 0, punch = 0, ca = 0, seed = 0;
+  const drop = DROPS.find(w => inWin(t, w));
+  if (drop) {
+    const bi = Math.floor((t - drop[0]) / B), ph = (t - drop[0]) % B, bar = bi % 4 === 0;
+    amp = (bar ? 15 : 6) * Math.exp(-ph / .07);
+    punch = bar ? .03 * Math.exp(-ph / .12) : .01 * Math.exp(-ph / .08);
+    ca = 2 + amp * .6; seed = bi;
+  } else if (inWin(t, HALF)) {
+    const ph = (t - HALF[0]) % BAR; amp = 5 * Math.exp(-ph / .1); ca = 1; seed = Math.floor(t / BAR);
+  } else if (t >= 4.8 && t < 15.6) {
+    const ph = (t - 4.8) % BAR; amp = 10 * Math.exp(-ph / .08); punch = .02 * Math.exp(-ph / .1); ca = 1 + amp * .5; seed = Math.floor(t / BAR);
+  } else if (t < 4.8) {
+    for (const [a, d] of [[.15, .55], [.85, .17], [1.02, .17], [1.19, .35]]) if (t >= a && t < a + d) { amp = 9; seed = Math.floor(t * 30); }
+  }
+  if (t >= 33.2 && t < 33.6) { const ph = t - 33.2; amp += 24 * Math.exp(-ph / .12); punch += .05 * Math.exp(-ph / .15); ca += 8 * Math.exp(-ph / .1); }
+  if (t >= 11.2 && t < 11.5) { const ph = t - 11.2; amp += 20 * Math.exp(-ph / .1); ca += 6 * Math.exp(-ph / .1); }
+  const N2 = RemotionNoise.noise2D;
+  const dx = amp * N2("sx", t * 11, seed * .31) + 3 * N2("hx", t * .7, 0);   // hit wobble + slow handheld drift
+  const dy = amp * N2("sy", t * 11, seed * .31) + 3 * N2("hy", t * .7, 0);
+  stage.style.rotate = (.25 * N2("hr", t * .5, 0) + amp * .02 * N2("rr", t * 9, seed)).toFixed(3) + "deg";
+  stage.style.transform = `translate(${dx}px,${dy}px) scale(${1 + punch}) ${stage.style.transform}`;
+  document.documentElement.style.setProperty("--ca", ca.toFixed(2));
+  let fl = 0;
+  for (const [at, s] of [[16.0, 1], [36.8, 1], [54.4, .8], [11.2, .5], [27.45, .4], [33.2, .3]]) if (t >= at) fl = Math.max(fl, s * Math.exp(-(t - at) / .12));
+  for (let k = 0; k < 7; k++) { const at = 4.8 + k * BAR; if (t >= at && at < 15.6) fl = Math.max(fl, .22 * Math.exp(-(t - at) / .06)); }
+  document.getElementById("flash").style.opacity = fl.toFixed(3);
+  document.getElementById("scan").style.opacity = drop ? .45 : .2;
+  const g = document.getElementById("grain");
+  g.style.transform = `translate(${(hash(Math.floor(t * 24)) - .5) * 100}px,${(hash(Math.floor(t * 24) + 3) - .5) * 100}px)`;
+  return Promise.all(PENDING);
+}
+function fitAll() {
+  S.forEach(s => s.el.style.display = "block");
+  document.querySelectorAll(".c.big, .c.mid, .chip").forEach(el => {
+    const cs = getComputedStyle(el);
+    let fs = parseFloat(cs.fontSize);
+    if (el.scrollWidth > 1010 && cs.whiteSpace === "nowrap") {
+      // @remotion/layout-utils measures the text and gives the size that fits in one go
+      try {
+        const fit = RemotionLayoutUtils.fitText({ text: el.textContent, withinWidth: 1010, fontFamily: cs.fontFamily,
+          fontWeight: cs.fontWeight, textTransform: cs.textTransform, letterSpacing: cs.letterSpacing });
+        fs = Math.min(fs, Math.floor(fit.fontSize)); el.style.fontSize = fs + "px";
+      } catch (e) { /* fall through to the shrink loop */ }
+    }
+    while (el.scrollWidth > 1010 && fs > 30) { fs -= 4; el.style.fontSize = fs + "px"; }
+  });
+  S.forEach(s => s.el.style.display = "none");
+}
+window.loadFonts = () => Promise.all(["100px Anton", "900 50px Inter", "800 50px Inter", "700 50px Inter", "500 50px Inter", "700 50px 'Space Grotesk'", "50px 'Permanent Marker'",
+  "800 50px 'Noto Sans Devanagari'", "700 50px 'Noto Sans Kannada'", "700 50px 'Noto Sans Tamil'"]
+  .map(f => document.fonts.load(f, "AहಕதA"))).then(() => document.fonts.ready);
+window.fitAll = fitAll;
+window.seek = seek;
+window.DUR = 58.4;
+
+reelkit.register({ dur: 58.4, seek, before: async () => { await loadFonts(); fitAll(); } })
+  .then(({ timeline }) => { window.__timelines["main"] = timeline; });
+</script>
+</body>
+</html>
