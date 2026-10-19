@@ -1,2 +1,4 @@
 # word-timed captions (kinetix captions)
 faster-whisper>=1.0
+# av 19 dropped the `metadata_errors` argument faster-whisper 1.2 passes to av.open()
+av<19
