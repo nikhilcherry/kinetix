@@ -221,6 +221,7 @@ class Mix:
         mix *= 0.89 / np.abs(mix).max()
         f = int(fade * SR)
         mix[-f:] *= np.linspace(1, 0, f)
+        __import__("os").makedirs(__import__("os").path.dirname(path) or ".", exist_ok=True)
         with wave.open(path, "wb") as w:
             w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR)
             w.writeframes((mix * 32767).astype(np.int16).tobytes())
